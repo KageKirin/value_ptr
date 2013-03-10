@@ -1,0 +1,8 @@
+syntax: regexp
+
+syntax: glob
+
+*.o
+*.pyc
+
+.sconsign.dblite
