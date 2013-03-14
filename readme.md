@@ -18,17 +18,18 @@ The definition of a copy can be surprisingly challenging, however. For any type 
 ## Other implementations
 
 
-### virtual clone
+### member clone
 
-This situation has been solved in a few different ways. Some libraries that deal with copying polymorphically require the class to define a virtual `clone` member function in the base and all derived classes. This has some drawbacks, however.
+This situation has been solved in a few different ways. Some libraries that deal with copying polymorphically require the class to define a virtual `clone` member function in the base and all derived classes. This has one major drawback, however.
 
-* It requires virtual functions where none may be needed. This increases the size of each instance of the class and slows down copy construction if the virtual call cannot be inlined. This is not a major drawback for most applications because the slowdown and increase in size are minor, but some applications measure their memory usage in bytes or spend a lot of time copying already.
 * It requires the contained class to be modified to use it with the `value_ptr`. This can be impossible in the case that the pointed-to object comes from third-party code.
+
+Note that it does not require a virtual function. The usage of a virtual member function `clone` vs. a non-virtual member function `clone` is identical. A class that is not virtual and is not designed to be derived from can have a regular member function that just calls the copy constructor.
 
 
 ### Template function
 
-Other libraries use a template function that must be defined for the user's type. This is the approach used by the Boost.Pointer Container library. This neatly avoids all of the problems listed above, and allows for easy specialization of non-class types. The Boost Pointer Container library uses the function `new_clone`:
+Other libraries use a template function that must be defined for the user's type. This is the approach used by the Boost.Pointer Container library. This neatly avoids the problem listed above, and allows for easy specialization of non-class types. The Boost Pointer Container library uses the function `new_clone`:
 
 However, the question remains of what the default behavior should be.
 
@@ -38,4 +39,4 @@ TODO: Determine if there is a runtime error or a slice for the default implement
 
 ## This library's implementation
 
-Due to the above reasons, this `value_ptr` uses the template function `new_clone`, to help interoperability between libraries that are already using Boost.Pointer Container. A definition is given for non-class types that performs a simple copy.
+Due to the above reasons, this `value_ptr` uses the template function `new_clone`, to help interoperability between libraries that are already using Boost.Pointer Container and potential users of `value_ptr`. A definition is given for non-class types that performs a simple copy.
