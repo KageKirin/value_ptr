@@ -58,6 +58,17 @@ class value_ptr : private std::unique_ptr<T, Deleter> {
 		using base::operator->;
 };
 
+
+template<typename T, typename Deleter>
+void swap(value_ptr<T, Deleter> & lhs, value_ptr<T, Deleter> & rhs) noexcept {
+	lhs.swap(rhs);
+}
+
+
+
+// Rest of the file is relational operators
+
+
 template<typename T1, typename D1, typename T2, typename D2>
 bool operator==(value_ptr<T1, D1> const & lhs, value_ptr<T2, D2> const & rhs) {
 	return lhs.get() == rhs.get();
@@ -144,10 +155,6 @@ bool operator>=(value_ptr<T, D> const & ptr, std::nullptr_t) {
 template<typename T, typename D>
 bool operator>=(std::nullptr_t, value_ptr<T, D> const & ptr) {
 	return !(nullptr < ptr);
-}
-
-template<typename T, typename Deleter>
-void swap(value_ptr<T, Deleter> & lhs, value_ptr<T, Deleter> & rhs) noexcept {
 }
 
 }	// namespace smart_pointer
