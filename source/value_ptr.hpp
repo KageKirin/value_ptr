@@ -40,9 +40,37 @@ class value_ptr : private std::unique_ptr<T, Deleter> {
 		constexpr value_ptr(std::nullptr_t) noexcept:
 			base(nullptr) {
 		}
+		value_ptr(value_ptr & other):
+			base(new T(*other)) {
+		}
+		value_ptr(value_ptr const & other):
+			base(new T(*other)) {
+		}
+		template<typename U, typename E>
+		value_ptr(value_ptr<U, E> const & other):
+			base(new T(*other)) {
+		}
+		explicit value_ptr(T & other):
+			base(new T(other)) {
+		}
+		explicit value_ptr(T const & other):
+			base(new T(other)) {
+		}
+		value_ptr(value_ptr && other):
+			base(std::move(other)) {
+		}
+		template<typename U, typename E>
+		value_ptr(value_ptr<U, E> && other):
+			base(std::move(other)) {
+		}
 		template<typename... Args>
-		value_ptr(Args && ... args) noexcept:
+		explicit value_ptr(Args && ... args) noexcept:
 			base(std::forward<Args>(args)...) {
+		}
+		template<typename U, typename E>
+		value_ptr & operator=(value_ptr<U, E> const & other) {
+			base::reset(new T(*other));
+			return *this;
 		}
 		using base::operator=;
 
