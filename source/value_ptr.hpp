@@ -42,20 +42,20 @@ public:
 		base(nullptr) {
 	}
 	value_ptr(value_ptr & other):
-		base(clone(other)) {
+		base(clone(*other)) {
 	}
 	value_ptr(value_ptr const & other):
-		base(clone(other)) {
+		base(clone(*other)) {
 	}
 	template<typename U, typename E>
 	value_ptr(value_ptr<U, E> const & other):
-		base(clone(other)) {
+		base(clone(*other)) {
 	}
 	explicit value_ptr(T & other):
-		base(new T(other)) {
+		base(clone(other)) {
 	}
 	explicit value_ptr(T const & other):
-		base(new T(other)) {
+		base(clone(other)) {
 	}
 	value_ptr(value_ptr && other) noexcept:
 		base(std::move(other.base)) {
@@ -113,8 +113,8 @@ public:
 		return get();
 	}
 private:
-	pointer clone(value_ptr const & other) const {
-		return base.second(other.get());
+	pointer clone(element_type const & other) const {
+		return base.second(&other);
 	}
 	pair_type base;
 };
