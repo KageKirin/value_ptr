@@ -41,14 +41,18 @@ public:
 	constexpr value_ptr(std::nullptr_t) noexcept:
 		base(nullptr) {
 	}
+	explicit value_ptr(pointer p) noexcept:
+		base(p) {
+	}
+
 	value_ptr(value_ptr & other):
 		base(clone(*other)) {
 	}
 	value_ptr(value_ptr const & other):
 		base(clone(*other)) {
 	}
-	template<typename U, typename E>
-	value_ptr(value_ptr<U, E> const & other):
+	template<typename U, typename C, typename D>
+	value_ptr(value_ptr<U, C, D> const & other):
 		base(clone(*other)) {
 	}
 	explicit value_ptr(T & other):
@@ -57,24 +61,34 @@ public:
 	explicit value_ptr(T const & other):
 		base(clone(other)) {
 	}
+
 	value_ptr(value_ptr && other) noexcept:
 		base(std::move(other.base)) {
 	}
-	template<typename U, typename E>
-	value_ptr(value_ptr<U, E> && other) noexcept:
+	template<typename U, typename D>
+	value_ptr(std::unique_ptr<U, D> && other):
+		base(std::move(other)) {
+	}
+	template<typename U>
+	value_ptr(std::auto_ptr<U> && other):
+		base(std::move(other)) {
+	}
+	template<typename U, typename C, typename D>
+	value_ptr(value_ptr<U, C, D> && other) noexcept:
 		base(std::move(other.base)) {
 	}
 	template<typename... Args>
 	explicit value_ptr(Args && ... args) noexcept:
 		base(std::forward<Args>(args)...) {
 	}
-	template<typename U, typename E>
-	value_ptr & operator=(value_ptr<U, E> const & other) {
+
+	template<typename U, typename C, typename D>
+	value_ptr & operator=(value_ptr<U, C, D> const & other) {
 		base.first.reset(clone(other));
 		return *this;
 	}
-	template<typename U, typename E>
-	value_ptr & operator=(value_ptr<U, E> & other) {
+	template<typename U, typename C, typename D>
+	value_ptr & operator=(value_ptr<U, C, D> & other) {
 		base.first.reset(clone(other));
 		return *this;
 	}
