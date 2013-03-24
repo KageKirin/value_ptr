@@ -21,79 +21,110 @@
 #define VALUE_PTR_HPP_
 
 #include <memory>
+#include <boost/compressed_pair.hpp>
+#include "default_new.hpp"
 
 namespace smart_pointer {
 
-template<typename T, typename Deleter = std::default_delete<T>>
-class value_ptr : private std::unique_ptr<T, Deleter> {
-		typedef typename std::unique_ptr<T, Deleter> base;
-	public:
-		using base::pointer;
-		using base::element_type;
-		using base::deleter_type;
-		
-		// gcc does not yet support inheriting constructors, so I have to
-		// manually define these.
-		constexpr value_ptr() noexcept = default;
-		constexpr value_ptr(std::nullptr_t) noexcept:
-			base(nullptr) {
-		}
-		value_ptr(value_ptr & other):
-			base(new T(*other)) {
-		}
-		value_ptr(value_ptr const & other):
-			base(new T(*other)) {
-		}
-		template<typename U, typename E>
-		value_ptr(value_ptr<U, E> const & other):
-			base(new T(*other)) {
-		}
-		explicit value_ptr(T & other):
-			base(new T(other)) {
-		}
-		explicit value_ptr(T const & other):
-			base(new T(other)) {
-		}
-		value_ptr(value_ptr && other):
-			base(std::move(other)) {
-		}
-		template<typename U, typename E>
-		value_ptr(value_ptr<U, E> && other):
-			base(std::move(other)) {
-		}
-		template<typename... Args>
-		explicit value_ptr(Args && ... args) noexcept:
-			base(std::forward<Args>(args)...) {
-		}
-		template<typename U, typename E>
-		value_ptr & operator=(value_ptr<U, E> const & other) {
-			base::reset(new T(*other));
-			return *this;
-		}
-		using base::operator=;
-
-		using base::release;
-		using base::reset;
-		using base::swap;
-		
-		using base::get;
-		using base::get_deleter;
-		using base::operator bool;
-
-		using base::operator*;
-		using base::operator->;
+template<typename T, typename Cloner = default_new<T>, typename Deleter = std::default_delete<T>>
+class value_ptr {
+public:
+	typedef typename std::unique_ptr<T, Deleter> unique_ptr_type;
+	typedef boost::compressed_pair<unique_ptr_type, Cloner> pair_type;
+public:
+	typedef typename unique_ptr_type::pointer pointer;
+	typedef typename unique_ptr_type::element_type element_type;
+	typedef Cloner cloner_type;
+	typedef typename unique_ptr_type::deleter_type deleter_type;
+	
+	constexpr value_ptr() noexcept {}
+	constexpr value_ptr(std::nullptr_t) noexcept:
+		base(nullptr) {
+	}
+	value_ptr(value_ptr & other):
+		base(clone(other)) {
+	}
+	value_ptr(value_ptr const & other):
+		base(clone(other)) {
+	}
+	template<typename U, typename E>
+	value_ptr(value_ptr<U, E> const & other):
+		base(clone(other)) {
+	}
+	explicit value_ptr(T & other):
+		base(new T(other)) {
+	}
+	explicit value_ptr(T const & other):
+		base(new T(other)) {
+	}
+	value_ptr(value_ptr && other) noexcept:
+		base(std::move(other.base)) {
+	}
+	template<typename U, typename E>
+	value_ptr(value_ptr<U, E> && other) noexcept:
+		base(std::move(other.base)) {
+	}
+	template<typename... Args>
+	explicit value_ptr(Args && ... args) noexcept:
+		base(std::forward<Args>(args)...) {
+	}
+	template<typename U, typename E>
+	value_ptr & operator=(value_ptr<U, E> const & other) {
+		base.first.reset(clone(other));
+		return *this;
+	}
+	template<typename U, typename E>
+	value_ptr & operator=(value_ptr<U, E> & other) {
+		base.first.reset(clone(other));
+		return *this;
+	}
+	template<typename... Args>
+	value_ptr & operator=(Args && ... args) noexcept {
+		unique_ptr_type::operator=(std::forward<Args>(args)...);
+		return *this;
+	}
+	
+	pointer release() noexcept {
+		return base.first.release();
+	}
+	void reset(pointer ptr = pointer()) {
+		base.first.reset(ptr);
+	}
+	void swap(value_ptr & other) noexcept {
+		base.swap(other.base);
+	}
+	
+	pointer get() const noexcept {
+		return base.first.get();
+	}
+	deleter_type const & get_deleter() const noexcept {
+		return base.first.get_deleter();
+	}
+	deleter_type & get_deleter() noexcept {
+		return base.first.get_deleter();
+	}
+	explicit operator bool() const noexcept {
+		return static_cast<bool>(base.first);
+	}
+	typename std::add_lvalue_reference<T>::type operator*() const {
+		return *get();
+	}
+	pointer operator->() const noexcept {
+		return get();
+	}
+private:
+	pointer clone(value_ptr const & other) const {
+		return base.second(other.get());
+	}
+	pair_type base;
 };
-
 
 template<typename T, typename Deleter>
 void swap(value_ptr<T, Deleter> & lhs, value_ptr<T, Deleter> & rhs) noexcept {
 	lhs.swap(rhs);
 }
 
-
-
 // Rest of the file is relational operators
-
 
 template<typename T1, typename D1, typename T2, typename D2>
 bool operator==(value_ptr<T1, D1> const & lhs, value_ptr<T2, D2> const & rhs) {

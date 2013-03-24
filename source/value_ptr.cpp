@@ -49,19 +49,6 @@ void f(value_ptr<Tester> value) {
 }
 
 int main() {
-	std::cout << "1\n";
-	value_ptr<Tester> a(new Tester);
-	std::cout << "2\n";
-	f(a);
-	std::cout << "3\n";
-	f(std::move(a));
-	std::cout << "4\n";
-	Tester tester1;
-	std::cout << "5\n";
-	value_ptr<Tester> b(tester1);
-	std::cout << "6\n";
-	Tester const tester2;
-	std::cout << "7\n";
-	value_ptr<Tester> c(tester2);
-	std::cout << "8\n";
+	static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
+	value_ptr<Tester[3]> first;
 }
