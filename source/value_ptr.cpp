@@ -15,40 +15,108 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "value_ptr.hpp"
+#include <cassert>
 #include <iostream>
+
+using namespace smart_pointer;
+namespace {
 
 class Tester {
 public:
 	Tester() {
-		std::cout << "Default constructed\n";
+		++default_constructed;
 	}
 	Tester(Tester const & other) {
-		std::cout << "Copy constructed\n";
+		++copy_constructed;
 	}
 	Tester(Tester && other) noexcept {
-		std::cout << "Move constructed\n";
+		++move_constructed;
 	}
 	Tester & operator=(Tester const & other) {
-		std::cout << "Copy assigned\n";
+		++copy_assigned;
 		return *this;
 	}
 	Tester & operator=(Tester && other) noexcept {
-		std::cout << "Move assigned\n";
+		++move_assigned;
 		return *this;
 	}
 	~Tester() noexcept {
-		std::cout << "Destructed.\n";
+		++destructed;
 	}
+	static std::size_t default_constructed;
+	static std::size_t copy_constructed;
+	static std::size_t move_constructed;
+	static std::size_t copy_assigned;
+	static std::size_t move_assigned;
+	static std::size_t destructed;
 };
 
-using namespace smart_pointer;
+std::size_t Tester::default_constructed;
+std::size_t Tester::copy_constructed;
+std::size_t Tester::move_constructed;
+std::size_t Tester::copy_assigned;
+std::size_t Tester::move_assigned;
+std::size_t Tester::destructed;
 
-namespace {
-void f(value_ptr<Tester> value) {
-}
-}
+static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
+
+template<typename T>
+class Verify {
+public:
+	void operator()() const {
+		assert(default_constructed == T::default_constructed);
+		assert(copy_constructed == T::copy_constructed);
+		assert(move_constructed == T::move_constructed);
+		assert(copy_assigned == T::copy_assigned);
+		assert(move_assigned == T::move_assigned);
+		assert(destructed == T::destructed);
+	}
+	void default_construct() {
+		++default_constructed;
+	}
+	void copy_construct() {
+		++copy_constructed;
+	}
+	void move_construct() {
+		++move_constructed;
+	}
+	void copy_assign() {
+		++copy_assigned;
+	}
+	void move_assign() {
+		++move_assigned;
+	}
+	void destruct() {
+		++destructed;
+	}
+private:
+	std::size_t default_constructed = 0;
+	std::size_t copy_constructed = 0;
+	std::size_t move_constructed = 0;
+	std::size_t copy_assigned = 0;
+	std::size_t move_assigned = 0;
+	std::size_t destructed = 0;
+};
+
+}	// namespace
 
 int main() {
-	static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
-	value_ptr<Tester[3]> first;
+	Verify<Tester> verify;
+	verify();
+	value_ptr<Tester> a;
+	verify();
+	#if 0
+	value_ptr<Tester> b(new Tester);
+	verify.default_construct();
+	verify();
+	#endif
 }
+
+
+
+
+
+
+
+
+
