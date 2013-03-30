@@ -89,24 +89,28 @@ private:
 	std::size_t destructed = 0;
 };
 
-void test_constructors() {
-	Verify<Tester> verify;
+void test_constructors(Verify<Tester> & verify) {
 	verify();
-	value_ptr<Tester> a;
+	{
+		value_ptr<Tester> p;
+	}
 	verify();
-	value_ptr<Tester> b(new Tester);
-	verify.default_construct();
-	verify();
-	b.reset(nullptr);
-	verify.destruct();
+	{
+		value_ptr<Tester> p(new Tester);
+		verify.default_construct();
+		verify();
+		p.reset(nullptr);
+		verify.destruct();
+		verify();
+	}
 	verify();
 	Tester t;
 	verify.default_construct();
-	value_ptr<Tester> c(t);
+	value_ptr<Tester> p(t);
 	verify.copy_construct();
 	verify();
 	std::vector<value_ptr<Tester>> v;
-	v.emplace_back(std::move(c));
+	v.emplace_back(std::move(p));
 	verify();
 	for (size_t n = 0; n != 10; ++n) {
 		v.emplace_back(value_ptr<Tester>(new Tester));
@@ -119,12 +123,18 @@ void test_constructors() {
 	value_ptr<Tester> d(v[3]);
 	verify.copy_construct();
 	verify();
+	verify.destruct();	// t
+	verify.destruct();	// p
+	for (size_t n = 0; n != v.size(); ++n) {
+		verify.destruct();
+	}
 }
 
 }	// namespace
 
 int main() {
-	test_constructors();
+	Verify<Tester> verify;
+	test_constructors(verify);
 }
 
 
