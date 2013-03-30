@@ -126,6 +126,12 @@ public:
 	deleter_type & get_deleter() noexcept {
 		return std::get<0>(base).get_deleter();
 	}
+	cloner_type const & get_cloner() const noexcept {
+		return std::get<1>(base);
+	}
+	cloner_type & get_cloner() noexcept {
+		return std::get<1>(base);
+	}
 	explicit operator bool() const noexcept {
 		return static_cast<bool>(std::get<0>(base));
 	}
@@ -136,8 +142,8 @@ public:
 		return get();
 	}
 private:
-	pointer clone(element_type const & other) const {
-		return std::get<1>(base)(&other);
+	unique_ptr_type clone(element_type const & other) const {
+		return get_cloner()(&other);
 	}
 	pair_type base;
 };

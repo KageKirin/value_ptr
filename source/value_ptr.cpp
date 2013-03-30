@@ -100,6 +100,11 @@ int main() {
 	b.reset(nullptr);
 	verify.destruct();
 	verify();
+	Tester t;
+	verify.default_construct();
+	value_ptr<Tester> c(t);
+	verify.copy_construct();
+	verify();
 }
 
 
