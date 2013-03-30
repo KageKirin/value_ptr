@@ -48,47 +48,47 @@ public:
 	
 	constexpr value_ptr() noexcept {}
 	constexpr value_ptr(std::nullptr_t) noexcept:
-		base(nullptr, cloner_type()) {
+		base(nullptr, cloner_type(), detail::empty_class()) {
 	}
 	explicit value_ptr(pointer p) noexcept:
-		base(std::move(unique_ptr_type(p)), cloner_type()) {
+		base(unique_ptr_type(p), cloner_type(), detail::empty_class()) {
 	}
 
 	value_ptr(value_ptr & other):
-		base(clone(*other), cloner_type()) {
+		base(clone(*other), cloner_type(), detail::empty_class()) {
 	}
 	value_ptr(value_ptr const & other):
-		base(clone(*other), cloner_type()) {
+		base(clone(*other), cloner_type(), detail::empty_class()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
-		base(clone(*other), cloner_type()) {
+		base(clone(*other), cloner_type(), detail::empty_class()) {
 	}
 	explicit value_ptr(T & other):
-		base(clone(other), cloner_type()) {
+		base(clone(other), cloner_type(), detail::empty_class()) {
 	}
 	explicit value_ptr(T const & other):
-		base(clone(other), cloner_type()) {
+		base(clone(other), cloner_type(), detail::empty_class()) {
 	}
 
 	value_ptr(value_ptr && other) noexcept:
-		base(std::move(other.base), cloner_type()) {
+		base(std::move(other.base), cloner_type(), detail::empty_class()) {
 	}
 	template<typename U, typename D>
 	value_ptr(std::unique_ptr<U, D> && other):
-		base(std::move(other), cloner_type()) {
+		base(std::move(other), cloner_type(), detail::empty_class()) {
 	}
 	template<typename U>
 	value_ptr(std::auto_ptr<U> && other):
-		base(std::move(other), cloner_type()) {
+		base(std::move(other), cloner_type(), detail::empty_class()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> && other) noexcept:
-		base(std::move(other.base), cloner_type()) {
+		base(std::move(other.base), cloner_type(), detail::empty_class()) {
 	}
 	template<typename... Args>
 	explicit value_ptr(Args && ... args) noexcept:
-		base(std::forward<Args>(args)..., cloner_type()) {
+		base(std::forward<Args>(args)..., cloner_type(), detail::empty_class()) {
 	}
 
 	template<typename U, typename C, typename D>

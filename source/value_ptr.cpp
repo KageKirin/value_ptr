@@ -65,12 +65,12 @@ template<typename T>
 class Verify {
 public:
 	void operator()() const {
-		assert(default_constructed == T::default_constructed);
-		assert(copy_constructed == T::copy_constructed);
-		assert(move_constructed == T::move_constructed);
-		assert(copy_assigned == T::copy_assigned);
-		assert(move_assigned == T::move_assigned);
-		assert(destructed == T::destructed);
+		assert(T::default_constructed == default_constructed);
+		assert(T::copy_constructed == copy_constructed);
+		assert(T::move_constructed == 0);
+		assert(T::copy_assigned == 0);
+		assert(T::move_assigned == 0);
+		assert(T::destructed == destructed);
 	}
 	void default_construct() {
 		++default_constructed;
@@ -78,24 +78,12 @@ public:
 	void copy_construct() {
 		++copy_constructed;
 	}
-	void move_construct() {
-		++move_constructed;
-	}
-	void copy_assign() {
-		++copy_assigned;
-	}
-	void move_assign() {
-		++move_assigned;
-	}
 	void destruct() {
 		++destructed;
 	}
 private:
 	std::size_t default_constructed = 0;
 	std::size_t copy_constructed = 0;
-	std::size_t move_constructed = 0;
-	std::size_t copy_assigned = 0;
-	std::size_t move_assigned = 0;
 	std::size_t destructed = 0;
 };
 
@@ -106,7 +94,7 @@ int main() {
 	verify();
 	value_ptr<Tester> a;
 	verify();
-//	value_ptr<Tester> b(new Tester);
+	value_ptr<Tester> b(new Tester);
 	verify.default_construct();
 	verify();
 }
