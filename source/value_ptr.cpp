@@ -18,6 +18,7 @@
 #include <cassert>
 #include <iostream>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 using namespace smart_pointer;
@@ -108,6 +109,14 @@ int main() {
 	verify();
 	std::vector<value_ptr<Tester>> v;
 	v.emplace_back(std::move(c));
+	verify();
+	for (size_t n = 0; n != 10; ++n) {
+		v.emplace_back(value_ptr<Tester>(new Tester));
+		verify.default_construct();
+	}
+	verify();
+	using std::swap;
+	swap(v[1], v[2]);
 	verify();
 }
 
