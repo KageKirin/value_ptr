@@ -93,12 +93,12 @@ public:
 
 	template<typename U, typename C, typename D>
 	value_ptr & operator=(value_ptr<U, C, D> const & other) {
-		base.first.reset(clone(other));
+		std::get<0>(base).reset(clone(other));
 		return *this;
 	}
 	template<typename U, typename C, typename D>
 	value_ptr & operator=(value_ptr<U, C, D> & other) {
-		base.first.reset(clone(other));
+		std::get<0>(base).reset(clone(other));
 		return *this;
 	}
 	template<typename... Args>
@@ -108,26 +108,26 @@ public:
 	}
 	
 	pointer release() noexcept {
-		return base.first.release();
+		return std::get<0>(base).release();
 	}
 	void reset(pointer ptr = pointer()) {
-		base.first.reset(ptr);
+		std::get<0>(base).reset(ptr);
 	}
 	void swap(value_ptr & other) noexcept {
 		base.swap(other.base);
 	}
 	
 	pointer get() const noexcept {
-		return base.first.get();
+		return std::get<0>(base).get();
 	}
 	deleter_type const & get_deleter() const noexcept {
-		return base.first.get_deleter();
+		return std::get<0>(base).get_deleter();
 	}
 	deleter_type & get_deleter() noexcept {
-		return base.first.get_deleter();
+		return std::get<0>(base).get_deleter();
 	}
 	explicit operator bool() const noexcept {
-		return static_cast<bool>(base.first);
+		return static_cast<bool>(std::get<0>(base));
 	}
 	typename std::add_lvalue_reference<T>::type operator*() const {
 		return *get();
@@ -137,7 +137,7 @@ public:
 	}
 private:
 	pointer clone(element_type const & other) const {
-		return base.second(&other);
+		return std::get<1>(base)(&other);
 	}
 	pair_type base;
 };

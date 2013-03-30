@@ -97,6 +97,9 @@ int main() {
 	value_ptr<Tester> b(new Tester);
 	verify.default_construct();
 	verify();
+	b.reset(nullptr);
+	verify.destruct();
+	verify();
 }
 
 
