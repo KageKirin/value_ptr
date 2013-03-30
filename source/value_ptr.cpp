@@ -89,9 +89,7 @@ private:
 	std::size_t destructed = 0;
 };
 
-}	// namespace
-
-int main() {
+void test_constructors() {
 	Verify<Tester> verify;
 	verify();
 	value_ptr<Tester> a;
@@ -118,6 +116,15 @@ int main() {
 	using std::swap;
 	swap(v[1], v[2]);
 	verify();
+	value_ptr<Tester> d(v[3]);
+	verify.copy_construct();
+	verify();
+}
+
+}	// namespace
+
+int main() {
+	test_constructors();
 }
 
 
