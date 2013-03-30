@@ -18,6 +18,7 @@
 #include <cassert>
 #include <iostream>
 #include <tuple>
+#include <vector>
 
 using namespace smart_pointer;
 namespace {
@@ -104,6 +105,9 @@ int main() {
 	verify.default_construct();
 	value_ptr<Tester> c(t);
 	verify.copy_construct();
+	verify();
+	std::vector<value_ptr<Tester>> v;
+	v.emplace_back(std::move(c));
 	verify();
 }
 

@@ -55,14 +55,14 @@ public:
 	}
 
 	value_ptr(value_ptr & other):
-		base(clone(*other), cloner_type(), detail::empty_class()) {
+		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
 	value_ptr(value_ptr const & other):
-		base(clone(*other), cloner_type(), detail::empty_class()) {
+		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
-		base(clone(*other), cloner_type(), detail::empty_class()) {
+		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
 	explicit value_ptr(T & other):
 		base(clone(other), cloner_type(), detail::empty_class()) {
@@ -72,7 +72,7 @@ public:
 	}
 
 	value_ptr(value_ptr && other) noexcept:
-		base(std::move(other.base), cloner_type(), detail::empty_class()) {
+		base(std::move(other.base)) {
 	}
 	template<typename U, typename D>
 	value_ptr(std::unique_ptr<U, D> && other):
@@ -84,7 +84,7 @@ public:
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> && other) noexcept:
-		base(std::move(other.base), cloner_type(), detail::empty_class()) {
+		base(std::move(other.base)) {
 	}
 	template<typename... Args>
 	explicit value_ptr(Args && ... args) noexcept:
