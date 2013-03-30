@@ -21,16 +21,25 @@
 #define VALUE_PTR_HPP_
 
 #include <memory>
-#include <boost/compressed_pair.hpp>
+#include <tuple>
 #include "default_new.hpp"
 
 namespace smart_pointer {
+namespace detail {
+// This has to be an element of std::tuple to workaround gcc bug 
+// http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56785
+// A std::tuple with only two elements that contains another std::tuple of two
+// elements does not properly apply the empty base class optimization, and
+// std::unique_ptr is implemented via a two-element std::tuple in gcc.
+class empty_class {
+};
+}	// namespace detail
 
 template<typename T, typename Cloner = default_new<T>, typename Deleter = std::default_delete<T>>
 class value_ptr {
 public:
 	typedef typename std::unique_ptr<T, Deleter> unique_ptr_type;
-	typedef boost::compressed_pair<unique_ptr_type, Cloner> pair_type;
+	typedef std::tuple<unique_ptr_type, Cloner, detail::empty_class> pair_type;
 public:
 	typedef typename unique_ptr_type::pointer pointer;
 	typedef typename unique_ptr_type::element_type element_type;
@@ -39,47 +48,47 @@ public:
 	
 	constexpr value_ptr() noexcept {}
 	constexpr value_ptr(std::nullptr_t) noexcept:
-		base(nullptr) {
+		base(nullptr, cloner_type()) {
 	}
 	explicit value_ptr(pointer p) noexcept:
-		base(p) {
+		base(std::move(unique_ptr_type(p)), cloner_type()) {
 	}
 
 	value_ptr(value_ptr & other):
-		base(clone(*other)) {
+		base(clone(*other), cloner_type()) {
 	}
 	value_ptr(value_ptr const & other):
-		base(clone(*other)) {
+		base(clone(*other), cloner_type()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
-		base(clone(*other)) {
+		base(clone(*other), cloner_type()) {
 	}
 	explicit value_ptr(T & other):
-		base(clone(other)) {
+		base(clone(other), cloner_type()) {
 	}
 	explicit value_ptr(T const & other):
-		base(clone(other)) {
+		base(clone(other), cloner_type()) {
 	}
 
 	value_ptr(value_ptr && other) noexcept:
-		base(std::move(other.base)) {
+		base(std::move(other.base), cloner_type()) {
 	}
 	template<typename U, typename D>
 	value_ptr(std::unique_ptr<U, D> && other):
-		base(std::move(other)) {
+		base(std::move(other), cloner_type()) {
 	}
 	template<typename U>
 	value_ptr(std::auto_ptr<U> && other):
-		base(std::move(other)) {
+		base(std::move(other), cloner_type()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> && other) noexcept:
-		base(std::move(other.base)) {
+		base(std::move(other.base), cloner_type()) {
 	}
 	template<typename... Args>
 	explicit value_ptr(Args && ... args) noexcept:
-		base(std::forward<Args>(args)...) {
+		base(std::forward<Args>(args)..., cloner_type()) {
 	}
 
 	template<typename U, typename C, typename D>

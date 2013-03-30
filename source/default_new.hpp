@@ -22,6 +22,7 @@
 #define DEFAULT_NEW_HPP_
 
 #include <algorithm>
+#include <memory>
 
 namespace smart_pointer {
 
@@ -31,8 +32,8 @@ public:
 	constexpr default_new() noexcept {}
 	template<typename U>
 	constexpr default_new(default_new<U> const & other) noexcept {}
-	T * operator()(T const * const other) const {
-		return new T(*other);
+	std::unique_ptr<T> * operator()(T const * const other) const {
+		return std::unique_ptr<T>(new T(*other));
 	}
 };
 template<typename T, std::size_t n>
@@ -44,7 +45,7 @@ public:
 	T * operator()(T const (& other)[n]) const {
 		auto result = new T[n];
 		std::copy(std::begin(other), std::end(other), std::begin(result));
-		return result;
+		return std::unique_ptr<T[]>(result);
 	}
 };
 

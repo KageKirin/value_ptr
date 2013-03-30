@@ -17,6 +17,7 @@
 #include "value_ptr.hpp"
 #include <cassert>
 #include <iostream>
+#include <tuple>
 
 using namespace smart_pointer;
 namespace {
@@ -105,11 +106,9 @@ int main() {
 	verify();
 	value_ptr<Tester> a;
 	verify();
-	#if 0
-	value_ptr<Tester> b(new Tester);
+//	value_ptr<Tester> b(new Tester);
 	verify.default_construct();
 	verify();
-	#endif
 }
 
 
