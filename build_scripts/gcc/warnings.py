@@ -89,4 +89,4 @@ warnings = ['-Wall', '-Wextra', '-pedantic', '-Wcast-align', '-Wcast-qual', '-Wc
 # I have to set -Wstrict-overflow=5 to be a "debug" warning because it conflicts
 # with a boost library when link-time optimization is turned on.
 warnings_debug = ['-Wstrict-overflow=5']
-warnings_optimized = ['-Wdisabled-optimization', '-Wvector-operation-performance']
+warnings_optimized = ['-Wdisabled-optimization', '-Wunsafe-loop-optimizations', '-Wvector-operation-performance']

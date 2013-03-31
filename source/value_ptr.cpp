@@ -63,16 +63,24 @@ std::size_t Tester::destructed;
 
 static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
 
+#define CHECK_EQUALS(condition1, condition2) do { \
+	if ((condition1) != (condition2)) { \
+		std::cerr << (condition1) << ", " << (condition2) << '\n'; \
+		assert(condition1 == condition2); \
+	} \
+} while(0)
+
+
 template<typename T>
 class Verify {
 public:
 	void operator()() const {
-		assert(T::default_constructed == default_constructed);
-		assert(T::copy_constructed == copy_constructed);
-		assert(T::move_constructed == 0);
-		assert(T::copy_assigned == 0);
-		assert(T::move_assigned == 0);
-		assert(T::destructed == destructed);
+		CHECK_EQUALS(T::default_constructed, default_constructed);
+		CHECK_EQUALS(T::copy_constructed, copy_constructed);
+		CHECK_EQUALS(T::move_constructed, 0);
+		CHECK_EQUALS(T::copy_assigned, 0);
+		CHECK_EQUALS(T::move_assigned, 0);
+		CHECK_EQUALS(T::destructed, destructed);
 	}
 	void default_construct() {
 		++default_constructed;
@@ -135,6 +143,7 @@ void test_constructors(Verify<Tester> & verify) {
 int main() {
 	Verify<Tester> verify;
 	test_constructors(verify);
+	verify();
 }
 
 
