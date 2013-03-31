@@ -37,7 +37,7 @@ class empty_class {
 
 template<typename T, typename Cloner = default_new<T>, typename Deleter = std::default_delete<T>>
 class value_ptr {
-public:
+private:
 	typedef typename std::unique_ptr<T, Deleter> unique_ptr_type;
 	typedef std::tuple<unique_ptr_type, Cloner, detail::empty_class> pair_type;
 public:
