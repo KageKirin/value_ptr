@@ -138,6 +138,21 @@ void test_constructors(Verify<Tester> & verify) {
 	}
 }
 
+class C {
+public:
+	int get() const {
+		return 4;
+	}
+};
+
+void test_semantics() {
+	value_ptr<int> a(new int(5));
+	value_ptr<int> b(new int(7));
+	CHECK_EQUALS(*a + *b, 12);
+	value_ptr<C> c(new C);
+	CHECK_EQUALS(*a + c->get(), 9);
+}
+
 }	// namespace
 
 int main() {
