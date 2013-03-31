@@ -154,6 +154,13 @@ private:
 	pair_type base;
 };
 
+
+// TODO: add support for other allocators / deleters, possibly?
+template<typename T, typename ... Args>
+value_ptr<T> make_value(Args && ... args) {
+	return value_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 template<typename T, typename Cloner, typename Deleter>
 void swap(value_ptr<T, Cloner, Deleter> & lhs, value_ptr<T, Cloner, Deleter> & rhs) noexcept {
 	lhs.swap(rhs);
