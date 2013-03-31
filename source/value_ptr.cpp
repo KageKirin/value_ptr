@@ -66,7 +66,7 @@ static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong si
 #define CHECK_EQUALS(condition1, condition2) do { \
 	if ((condition1) != (condition2)) { \
 		std::cerr << (condition1) << ", " << (condition2) << '\n'; \
-		assert(condition1 == condition2); \
+		assert((condition1) == (condition2)); \
 	} \
 } while(0)
 
