@@ -45,4 +45,4 @@ The most straightforward example is interoperability with C functions. A user of
 
 Due to the above reasons, `value_ptr` has a template parameter that defines the cloning strategy, similar to how `std::unique_ptr` allows for custom deleters. A default definition is given for non-class types that performs a simple copy, and this definition can be expanded to class types by specializing `default_new`.
 
-One possible option for the future would be to use `std::default_allocator` rather than `default_new`.
+One possible option for the future would be to use `std::allocator` rather than `default_new`.
