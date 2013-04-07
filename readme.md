@@ -39,4 +39,10 @@ TODO: Determine if there is a runtime error or a slice for the default implement
 
 ## This library's implementation
 
-Due to the above reasons, this `value_ptr` uses the template function `new_clone`, to help interoperability between libraries that are already using Boost.Pointer Container and potential users of `value_ptr`. A definition is given for non-class types that performs a simple copy.
+One drawback with the `new_clone` approach is that you are defining cloning behavior on a per-type basis. This is correct for a majority of use cases (for instance, a polymorphic base that has a virtual clone member function should always be cloned used that member function), but it fails to support use cases that `std::unique_ptr` works with.
+
+The most straightforward example is interoperability with C functions. A user of `value_ptr` may wish to, in some cases, transfer ownership of the pointer to some C function. The only safe way to do this is to tell the `value_ptr` that in this case, the object should be allocated with `malloc` and deleted with `free`. However, the class owned by the `value_ptr` would probably still want default behavior of `new` and `delete`.
+
+Due to the above reasons, `value_ptr` has a template parameter that defines the cloning strategy, similar to how `std::unique_ptr` allows for custom deleters. A default definition is given for non-class types that performs a simple copy, and this definition can be expanded to class types by specializing `default_new`.
+
+One possible option for the future would be to use `std::default_allocator` rather than `default_new`.
