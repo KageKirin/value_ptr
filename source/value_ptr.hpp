@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <tuple>
+#include <type_traits>
 #include "default_new.hpp"
 
 namespace smart_pointer {
@@ -135,7 +136,7 @@ public:
 	explicit operator bool() const noexcept {
 		return static_cast<bool>(get_unique_ptr());
 	}
-	typename std::add_lvalue_reference<T>::type operator*() const {
+	T & operator*() const {
 		return *get();
 	}
 	pointer operator->() const noexcept {
