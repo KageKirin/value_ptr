@@ -159,6 +159,7 @@ int main() {
 	Verify<Tester> verify;
 	test_constructors(verify);
 	verify();
+	test_semantics();
 }
 
 
