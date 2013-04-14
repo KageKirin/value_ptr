@@ -15,6 +15,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "value_ptr.hpp"
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <tuple>
@@ -62,6 +63,7 @@ std::size_t Tester::move_assigned;
 std::size_t Tester::destructed;
 
 static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
+static_assert(sizeof(value_ptr<Tester[]>) == sizeof(Tester *), "value_ptr array wrong size!");
 
 #define CHECK_EQUALS(condition1, condition2) do { \
 	if ((condition1) != (condition2)) { \
@@ -145,12 +147,21 @@ public:
 	}
 };
 
+void test_array_semantics() {
+	value_ptr<size_t[]> a(new size_t[10]);
+	std::iota(a.get(), a.get() + 10, 0);
+	for (size_t n = 0; n != 10; ++n) {
+		CHECK_EQUALS(a[n], n);
+	}
+}
+
 void test_semantics() {
 	value_ptr<int> a(new int(5));
 	value_ptr<int> b(new int(7));
 	CHECK_EQUALS(*a + *b, 12);
 	value_ptr<C> c(new C);
 	CHECK_EQUALS(*a + c->get(), 9);
+	test_array_semantics();
 }
 
 }	// namespace

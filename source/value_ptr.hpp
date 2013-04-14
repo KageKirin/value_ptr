@@ -136,12 +136,21 @@ public:
 	explicit operator bool() const noexcept {
 		return static_cast<bool>(get_unique_ptr());
 	}
-	T & operator*() const {
+
+	element_type & operator*() const {
+		static_assert(!std::is_array<T>::value, "operator* cannot be used with array types.");
 		return *get();
 	}
 	pointer operator->() const noexcept {
+		static_assert(!std::is_array<T>::value, "operator* cannot be used with array types.");
 		return get();
 	}
+
+	element_type & operator[](std::size_t index) const {
+		static_assert(std::is_array<T>::value, "operator[] can only be used with array types.");
+		return get_unique_ptr()[index];
+	}
+
 private:
 	unique_ptr_type const & get_unique_ptr() const {
 		return std::get<0>(base);
