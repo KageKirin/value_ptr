@@ -75,17 +75,17 @@ public:
 	value_ptr(value_ptr && other) noexcept:
 		base(std::move(other.base)) {
 	}
-	template<typename U, typename D>
-	value_ptr(std::unique_ptr<U, D> && other):
-		base(std::move(other), cloner_type(), detail::empty_class()) {
-	}
-	template<typename U>
-	value_ptr(std::auto_ptr<U> && other):
-		base(std::move(other), cloner_type(), detail::empty_class()) {
-	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> && other) noexcept:
 		base(std::move(other.base)) {
+	}
+	template<typename U, typename D>
+	value_ptr(std::unique_ptr<U, D> && other) noexcept:
+		base(std::move(other), cloner_type(), detail::empty_class()) {
+	}
+	template<typename U>
+	value_ptr(std::auto_ptr<U> && other) noexcept:
+		base(std::move(other), cloner_type(), detail::empty_class()) {
 	}
 	template<typename... Args>
 	explicit value_ptr(Args && ... args) noexcept:
@@ -116,7 +116,7 @@ public:
 	pointer release() noexcept {
 		return get_unique_ptr().release();
 	}
-	void reset(pointer ptr = pointer()) {
+	void reset(pointer ptr = pointer()) noexcept {
 		get_unique_ptr().reset(ptr);
 	}
 	void swap(value_ptr & other) noexcept {
@@ -157,10 +157,10 @@ public:
 	}
 
 private:
-	unique_ptr_type const & get_unique_ptr() const {
+	unique_ptr_type const & get_unique_ptr() const noexcept {
 		return std::get<0>(base);
 	}
-	unique_ptr_type & get_unique_ptr() {
+	unique_ptr_type & get_unique_ptr() noexcept {
 		return std::get<0>(base);
 	}
 	unique_ptr_type clone(element_type const & other) const {
