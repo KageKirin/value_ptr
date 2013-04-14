@@ -40,7 +40,7 @@ template<typename T, typename Cloner = default_new<T>, typename Deleter = std::d
 class value_ptr {
 private:
 	typedef typename std::unique_ptr<T, Deleter> unique_ptr_type;
-	typedef std::tuple<unique_ptr_type, Cloner, detail::empty_class> pair_type;
+	typedef std::tuple<unique_ptr_type, Cloner, detail::empty_class> base_type;
 public:
 	typedef typename unique_ptr_type::pointer pointer;
 	typedef typename unique_ptr_type::element_type element_type;
@@ -55,10 +55,10 @@ public:
 		base(unique_ptr_type(p), cloner_type(), detail::empty_class()) {
 	}
 
-	value_ptr(value_ptr & other):
+	value_ptr(value_ptr const & other):
 		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
-	value_ptr(value_ptr const & other):
+	value_ptr(value_ptr & other):
 		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
 	template<typename U, typename C, typename D>
@@ -92,14 +92,15 @@ public:
 		base(std::forward<Args>(args)..., cloner_type(), detail::empty_class()) {
 	}
 
-	template<typename U, typename C, typename D>
-	value_ptr & operator=(value_ptr<U, C, D> const & other) {
-		get_unique_ptr().reset(clone(other));
+	value_ptr & operator=(value_ptr const & other) {
+		get_unique_ptr() = unique_ptr_type(clone(*other));
+		get_cloner() = other.get_cloner();
 		return *this;
 	}
 	template<typename U, typename C, typename D>
-	value_ptr & operator=(value_ptr<U, C, D> & other) {
-		get_unique_ptr().reset(clone(other));
+	value_ptr & operator=(value_ptr<U, C, D> const & other) {
+		get_unique_ptr() = unique_ptr_type(clone(*other));
+		get_cloner() = other.get_cloner();
 		return *this;
 	}
 	template<typename U, typename C, typename D>
@@ -107,10 +108,16 @@ public:
 		base = std::move(other.base);
 		return *this;
 	}
-	template<typename... Args>
-	value_ptr & operator=(Args && ... args) noexcept {
-		unique_ptr_type::operator=(std::forward<Args>(args)...);
+	template<typename U, typename D>
+	value_ptr & operator=(std::unique_ptr<U, D> && other) noexcept {
+		get_unique_ptr() = (std::move(other));
+		// Should this reset the cloner by calling
+		// get_cloner() = cloner_type();
+		// ?
 		return *this;
+	}
+	value_ptr & operator=(std::nullptr_t) noexcept {
+		reset();
 	}
 	
 	pointer release() noexcept {
@@ -118,6 +125,9 @@ public:
 	}
 	void reset(pointer ptr = pointer()) noexcept {
 		get_unique_ptr().reset(ptr);
+		// Should this reset the cloner by calling
+		// get_cloner() = cloner_type();
+		// ?
 	}
 	void swap(value_ptr & other) noexcept {
 		base.swap(other.base);
@@ -166,7 +176,7 @@ private:
 	unique_ptr_type clone(element_type const & other) const {
 		return get_cloner()(&other);
 	}
-	pair_type base;
+	base_type base;
 };
 
 
