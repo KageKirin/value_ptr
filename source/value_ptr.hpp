@@ -102,6 +102,11 @@ public:
 		get_unique_ptr().reset(clone(other));
 		return *this;
 	}
+	template<typename U, typename C, typename D>
+	value_ptr & operator=(value_ptr<U, C, D> && other) {
+		base = std::move(other.base);
+		return *this;
+	}
 	template<typename... Args>
 	value_ptr & operator=(Args && ... args) noexcept {
 		unique_ptr_type::operator=(std::forward<Args>(args)...);

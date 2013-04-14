@@ -140,12 +140,13 @@ void test_constructors(Verify<Tester> & verify) {
 	}
 }
 
-class C {
-public:
-	int get() const {
-		return 4;
-	}
-};
+void test_assignment(Verify<Tester> & verify) {
+	verify();
+	value_ptr<Tester> p;
+	p = make_value<Tester>();
+	verify.default_construct();
+	verify();
+}
 
 void test_array_semantics() {
 	value_ptr<size_t[]> a(new size_t[10]);
@@ -154,6 +155,13 @@ void test_array_semantics() {
 		CHECK_EQUALS(a[n], n);
 	}
 }
+
+class C {
+public:
+	int get() const {
+		return 4;
+	}
+};
 
 void test_semantics() {
 	value_ptr<int> a(new int(5));
