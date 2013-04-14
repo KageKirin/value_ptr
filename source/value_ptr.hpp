@@ -103,7 +103,7 @@ public:
 		return *this;
 	}
 	template<typename U, typename C, typename D>
-	value_ptr & operator=(value_ptr<U, C, D> && other) {
+	value_ptr & operator=(value_ptr<U, C, D> && other) noexcept {
 		base = std::move(other.base);
 		return *this;
 	}
