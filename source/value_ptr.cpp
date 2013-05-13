@@ -65,24 +65,24 @@ std::size_t Tester::destructed;
 static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
 static_assert(sizeof(value_ptr<Tester[]>) == sizeof(Tester *), "value_ptr array wrong size!");
 
-#define CHECK_EQUALS(condition1, condition2) do { \
-	if ((condition1) != (condition2)) { \
-		std::cerr << (condition1) << ", " << (condition2) << '\n'; \
-		assert((condition1) == (condition2)); \
-	} \
-} while(0)
+void check_equals(bool const condition1, bool const condition2) {
+	if (condition1 != condition2) {
+		std::cerr << condition1 << ", " << condition2 << '\n';
+		assert(condition1 == condition2);
+	}
+}
 
 
 template<typename T>
 class Verify {
 public:
 	void operator()() const {
-		CHECK_EQUALS(T::default_constructed, default_constructed);
-		CHECK_EQUALS(T::copy_constructed, copy_constructed);
-		CHECK_EQUALS(T::move_constructed, 0);
-		CHECK_EQUALS(T::copy_assigned, 0);
-		CHECK_EQUALS(T::move_assigned, 0);
-		CHECK_EQUALS(T::destructed, destructed);
+		check_equals(T::default_constructed, default_constructed);
+		check_equals(T::copy_constructed, copy_constructed);
+		check_equals(T::move_constructed, 0);
+		check_equals(T::copy_assigned, 0);
+		check_equals(T::move_assigned, 0);
+		check_equals(T::destructed, destructed);
 	}
 	void default_construct() {
 		++default_constructed;
@@ -152,7 +152,7 @@ void test_array_semantics() {
 	value_ptr<size_t[]> a(new size_t[10]);
 	std::iota(a.get(), a.get() + 10, 0);
 	for (size_t n = 0; n != 10; ++n) {
-		CHECK_EQUALS(a[n], n);
+		check_equals(a[n], n);
 	}
 }
 
@@ -166,9 +166,9 @@ public:
 void test_semantics() {
 	value_ptr<int> a(new int(5));
 	value_ptr<int> b(new int(7));
-	CHECK_EQUALS(*a + *b, 12);
+	check_equals(*a + *b, 12);
 	value_ptr<C> c(new C);
-	CHECK_EQUALS(*a + c->get(), 9);
+	check_equals(*a + c->get(), 9);
 	test_array_semantics();
 }
 
