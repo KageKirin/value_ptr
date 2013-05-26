@@ -133,9 +133,18 @@ void test_constructors(Verify<Tester> & verify) {
 	value_ptr<Tester> d(v[3]);
 	verify.copy_construct();
 	verify();
+	constexpr std::size_t size = 5;
+	value_ptr<Tester[]> array(new Tester[size]);
+	for (std::size_t n = 0; n != size; ++n) {
+		verify.default_construct();
+	}
+	verify();
 	verify.destruct();	// t
 	verify.destruct();	// p
-	for (size_t n = 0; n != v.size(); ++n) {
+	for (std::size_t n = 0; n != v.size(); ++n) {
+		verify.destruct();
+	}
+	for (std::size_t n = 0; n != size; ++n) {
 		verify.destruct();
 	}
 }
@@ -149,9 +158,10 @@ void test_assignment(Verify<Tester> & verify) {
 }
 
 void test_array_semantics() {
-	value_ptr<size_t[]> a(new size_t[10]);
-	std::iota(a.get(), a.get() + 10, 0);
-	for (size_t n = 0; n != 10; ++n) {
+	constexpr std::size_t size = 10;
+	auto a = make_value<std::size_t[]>(size);
+	std::iota(a.get(), a.get() + size, 0);
+	for (size_t n = 0; n != size; ++n) {
 		check_equals(a[n], n);
 	}
 }
