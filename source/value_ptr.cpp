@@ -15,6 +15,7 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "value_ptr.hpp"
+#include "value_forward_list.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -65,24 +66,24 @@ std::size_t Tester::destructed;
 static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
 static_assert(sizeof(value_ptr<Tester[]>) == sizeof(Tester *), "value_ptr array wrong size!");
 
-void check_equals(bool const condition1, bool const condition2) {
-	if (condition1 != condition2) {
-		std::cerr << condition1 << ", " << condition2 << '\n';
-		assert(condition1 == condition2);
-	}
-}
+#define CHECK_EQUALS(condition1, condition2) do { \
+	if ((condition1) != (condition2)) { \
+		std::cerr << (condition1) << ", " << (condition2) << '\n'; \
+		assert((condition1) == (condition2)); \
+	} \
+} while(false)
 
 
 template<typename T>
 class Verify {
 public:
 	void operator()() const {
-		check_equals(T::default_constructed, default_constructed);
-		check_equals(T::copy_constructed, copy_constructed);
-		check_equals(T::move_constructed, 0);
-		check_equals(T::copy_assigned, 0);
-		check_equals(T::move_assigned, 0);
-		check_equals(T::destructed, destructed);
+		CHECK_EQUALS(T::default_constructed, default_constructed);
+		CHECK_EQUALS(T::copy_constructed, copy_constructed);
+		CHECK_EQUALS(T::move_constructed, 0);
+		CHECK_EQUALS(T::copy_assigned, 0);
+		CHECK_EQUALS(T::move_assigned, 0);
+		CHECK_EQUALS(T::destructed, destructed);
 	}
 	void default_construct() {
 		++default_constructed;
@@ -162,7 +163,7 @@ void test_array_semantics() {
 	auto a = make_value<std::size_t[]>(size);
 	std::iota(a.get(), a.get() + size, 0);
 	for (size_t n = 0; n != size; ++n) {
-		check_equals(a[n], n);
+		CHECK_EQUALS(a[n], n);
 	}
 }
 
@@ -176,10 +177,34 @@ public:
 void test_semantics() {
 	value_ptr<int> a(new int(5));
 	value_ptr<int> b(new int(7));
-	check_equals(*a + *b, 12);
+	CHECK_EQUALS(*a + *b, 12);
 	value_ptr<C> c(new C);
-	check_equals(*a + c->get(), 9);
+	CHECK_EQUALS(*a + c->get(), 9);
 	test_array_semantics();
+
+	std::vector<value_ptr<int>> temp;
+	temp.emplace_back(make_value<int>(5));
+	temp.emplace_back(make_value<int>(3));
+	temp.emplace_back(make_value<int>(1));
+	temp.emplace_back(make_value<int>(2));
+	temp.emplace_back(make_value<int>(4));
+	std::sort(std::begin(temp), std::end(temp), [](value_ptr<int> const & lhs, value_ptr<int> const & rhs) {
+		return *lhs < *rhs;
+	});
+}
+
+void test_forward_list() {
+	forward_list<int> fl;
+	fl.emplace_front(5);
+	CHECK_EQUALS(fl.front(), 5);
+	fl.emplace_front(2);
+	CHECK_EQUALS(fl.front(), 2);
+	fl.assign({2, 1, 3});
+	CHECK_EQUALS(fl.empty(), false);
+	fl.reverse();
+	assert(fl == forward_list<int>({ 3, 1, 2 }));
+	fl.sort();
+	assert(fl == forward_list<int>({ 1, 2, 3 }));
 }
 
 }	// namespace
@@ -189,13 +214,5 @@ int main() {
 	test_constructors(verify);
 	verify();
 	test_semantics();
+	test_forward_list();
 }
-
-
-
-
-
-
-
-
-
