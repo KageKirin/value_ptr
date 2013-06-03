@@ -54,19 +54,18 @@ public:
 	explicit value_ptr(pointer p) noexcept:
 		base(unique_ptr_type(p), cloner_type(), detail::empty_class()) {
 	}
+	value_ptr(pointer p, typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type deleter) noexcept {
+	}
+	value_ptr(pointer p, typename std::remove_reference<deleter_type>::type && deleter) noexcept:
+		base(unique_ptr_type(p, std::move(deleter)), cloner_type(), detail::empty_class()) {
+	}
 
 	value_ptr(value_ptr const & other):
-		base(clone(*other), other.get_cloner(), detail::empty_class()) {
-	}
-	value_ptr(value_ptr & other):
 		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
 		base(clone(*other), other.get_cloner(), detail::empty_class()) {
-	}
-	explicit value_ptr(T & other):
-		base(clone(other), cloner_type(), detail::empty_class()) {
 	}
 	explicit value_ptr(T const & other):
 		base(clone(other), cloner_type(), detail::empty_class()) {
@@ -87,10 +86,7 @@ public:
 	value_ptr(std::auto_ptr<U> && other) noexcept:
 		base(std::move(other), cloner_type(), detail::empty_class()) {
 	}
-	template<typename... Args>
-	explicit value_ptr(Args && ... args) noexcept:
-		base(std::forward<Args>(args)..., cloner_type(), detail::empty_class()) {
-	}
+
 
 	value_ptr & operator=(value_ptr const & other) {
 		get_unique_ptr() = unique_ptr_type(clone(*other));

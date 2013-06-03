@@ -100,6 +100,9 @@ private:
 	std::size_t destructed = 0;
 };
 
+class Base {};
+class Derived : public Base {};
+
 void test_constructors(Verify<Tester> & verify) {
 	verify();
 	{
@@ -148,6 +151,7 @@ void test_constructors(Verify<Tester> & verify) {
 	for (std::size_t n = 0; n != size; ++n) {
 		verify.destruct();
 	}
+	value_ptr<Base> vb(new Derived());
 }
 
 void test_assignment(Verify<Tester> & verify) {
@@ -216,3 +220,13 @@ int main() {
 	test_semantics();
 	test_forward_list();
 }
+
+
+
+
+
+
+
+
+
+
