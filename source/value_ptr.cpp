@@ -217,6 +217,7 @@ int main() {
 	Verify<Tester> verify;
 	test_constructors(verify);
 	verify();
+	test_assignment(verify);
 	test_semantics();
 	test_forward_list();
 }
