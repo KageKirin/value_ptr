@@ -114,6 +114,7 @@ public:
 	}
 	value_ptr & operator=(std::nullptr_t) noexcept {
 		reset();
+		return *this;
 	}
 	
 	pointer release() noexcept {
