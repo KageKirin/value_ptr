@@ -108,9 +108,7 @@ public:
 	template<typename U, typename D>
 	value_ptr & operator=(std::unique_ptr<U, D> && other) noexcept {
 		get_unique_ptr() = (std::move(other));
-		// Should this reset the cloner by calling
-		// get_cloner() = cloner_type();
-		// ?
+		get_cloner() = cloner_type();
 		return *this;
 	}
 	value_ptr & operator=(std::nullptr_t) noexcept {
@@ -123,9 +121,7 @@ public:
 	}
 	void reset(pointer ptr = pointer()) noexcept {
 		get_unique_ptr().reset(ptr);
-		// Should this reset the cloner by calling
-		// get_cloner() = cloner_type();
-		// ?
+		get_cloner() = cloner_type();
 	}
 	void swap(value_ptr & other) noexcept {
 		base.swap(other.base);
