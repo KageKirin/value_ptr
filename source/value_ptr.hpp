@@ -54,7 +54,8 @@ public:
 	explicit value_ptr(pointer p) noexcept:
 		base(unique_ptr_type(p), cloner_type(), detail::empty_class()) {
 	}
-	value_ptr(pointer p, typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type deleter) noexcept {
+	value_ptr(pointer p, typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type deleter) noexcept:
+		base(unique_ptr_type(p, deleter), cloner_type(), detail::empty_class()) {
 	}
 	value_ptr(pointer p, typename std::remove_reference<deleter_type>::type && deleter) noexcept:
 		base(unique_ptr_type(p, std::move(deleter)), cloner_type(), detail::empty_class()) {
