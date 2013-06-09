@@ -174,6 +174,9 @@ private:
 		return get_cloner()(&other);
 	}
 	base_type base;
+
+	template<typename U, typename C, typename D>
+	friend class value_ptr;
 };
 
 namespace detail {

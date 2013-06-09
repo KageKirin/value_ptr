@@ -151,7 +151,9 @@ void test_constructors(Verify<Tester> & verify) {
 	for (std::size_t n = 0; n != size; ++n) {
 		verify.destruct();
 	}
-	value_ptr<Base> vb(new Derived());
+	value_ptr<Base> vb(new Derived{});
+	value_ptr<Base> vexplicit(value_ptr<Derived>(new Derived{}));
+	value_ptr<Base> vmake(make_value<Derived>());
 }
 
 void test_assignment(Verify<Tester> & verify) {
