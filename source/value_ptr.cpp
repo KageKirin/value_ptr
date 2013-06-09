@@ -197,20 +197,6 @@ void test_semantics() {
 	});
 }
 
-void test_forward_list() {
-	forward_list<int> fl;
-	fl.emplace_front(5);
-	CHECK_EQUALS(fl.front(), 5);
-	fl.emplace_front(2);
-	CHECK_EQUALS(fl.front(), 2);
-	fl.assign({2, 1, 3});
-	CHECK_EQUALS(fl.empty(), false);
-	fl.reverse();
-	assert(fl == forward_list<int>({ 3, 1, 2 }));
-	fl.sort();
-	assert(fl == forward_list<int>({ 1, 2, 3 }));
-}
-
 }	// namespace
 
 int main() {
@@ -219,7 +205,6 @@ int main() {
 	verify();
 	test_assignment(verify);
 	test_semantics();
-	test_forward_list();
 }
 
 

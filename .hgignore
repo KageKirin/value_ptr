@@ -1,5 +1,12 @@
 syntax: regexp
 
+^test$
+^test-debug$
+^forward_list$
+^forward_list-debug$
+^forward_list_std$
+^forward_list_std-debug$
+
 syntax: glob
 
 *.o

@@ -46,35 +46,47 @@ if not GetOption('verbose'):
 
 default.Replace(CXX = compiler_command)
 
+build_root = 'build/' + compiler_name + '/'
+
 def setup_environment_flags(version):
 	environment = default.Clone()
 	environment.Append(CCFLAGS = flags['cc'][version])
 	environment.Append(CXXFLAGS = flags['cxx'][version])
 	environment.Append(LINKFLAGS = flags['link'][version])
 	environment.Append(CPPDEFINES = flags['cpp'][version])
-	if version != 'default':
-		build_root = 'build/' + compiler_name + '/'
-		environment.VariantDir(build_root + version, 'source', duplicate = 0)
 	return environment
 
 default = setup_environment_flags('default')
 debug = setup_environment_flags('debug')
 optimized = setup_environment_flags('optimized')
 
-def generate_sources(sources, version, compiler_name):
+def defines_to_string(defines):
+	string = ''
+	if defines != []:
+		for define in defines:
+			string += define
+		string += '/'
+	return string
+
+def build_directory(version, defines):
+	return build_root + version + '/' + defines_to_string(defines)
+
+def generate_sources(sources, version, defines):
 	temp = []
 	for source in sources:
-		temp += ['build/' + compiler_name + '/' + version + '/' + source]
+		temp += [build_directory(version, defines) + source]
 	return temp
 
 def create_program(base):
 	env = { 'debug':debug, 'optimized':optimized }
 	suffix = { 'debug':'-debug', 'optimized':'' }
-	name, sources, libraries = base
+	name, sources, defines, libraries = base
 	for version in ['debug', 'optimized']:
-		targets = generate_sources(sources, version, compiler_name)
+		targets = generate_sources(sources, version, defines)
 		executable_name = name + suffix[version]
-		env[version].Clone(LIBS = libraries).Program(executable_name, targets)
+		real_env = env[version].Clone(LIBS = libraries, CPPDEFINES=defines)
+		real_env.VariantDir(build_directory(version, defines), 'source', duplicate = 0)
+		real_env.Program(executable_name, targets)
 
 for sources in base_sources:
 	create_program(sources)

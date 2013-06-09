@@ -22,12 +22,17 @@ def prepend_dir(directory, sources):
 #
 # example_sources = prepend_dir('cool', ['alright.cpp', 'awesome.cpp'])
 # example_sources += prepend_dir('yeah', ['no.cpp', 'maybe.cpp'])
+# example_defines = []
 # example_libraries = ['boost_filesystem']
 #
-# example = ('example_program_name', example_sources, example_libraries)
+# example = ('example_program_name', example_sources, example_defines, example_libraries)
 # base_sources = [example]
 #
 # It is already assumed that the sources are in the 'source/' folder; it does
 # not need to be specified.
 
-base_sources = [('test', ['value_ptr.cpp'], [])]
+value_ptr_tests = ('test', ['value_ptr.cpp'], [], [])
+forward_list_tests = ('forward_list', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=false'], [])
+forward_list_std_tests = ('forward_list_std', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=true'], [])
+
+base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests]
