@@ -154,7 +154,7 @@ public:
 			m_value(other) {
 		}
 		friend class forward_list;
-		explicit operator iterator() noexcept {
+		explicit operator iterator() const noexcept {
 			// The only time this is called is on a container to which someone
 			// has gotten an iterator (as opposed to a const_iterator), which
 			// means that the container is non-const, which means that m_value
@@ -199,6 +199,22 @@ public:
 	}
 	forward_list(std::initializer_list<value_type> init, allocator_type const & alloc = allocator_type()):
 		forward_list(std::begin(init), std::end(init), alloc) {
+	}
+
+	forward_list(forward_list const & other) = default;
+	forward_list(forward_list && other) = default;
+	forward_list & operator=(forward_list const & other) = default;
+	forward_list & operator=(forward_list && other) = default;
+
+	// The default destructor gives the correct behavior on an abstract C++
+	// machine, but in reality the destructor of value_ptr makes recursive calls
+	// to itself that causes a stack overflow for large lists. This
+	// implementation is theoretically slightly slower because it involves
+	// setting pointers to nullptr.
+	~forward_list() noexcept {
+		while (!empty()) {
+			pop_front();
+		}
 	}
 	
 	void assign(size_type count, value_type const & value) {

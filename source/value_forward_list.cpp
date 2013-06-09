@@ -28,6 +28,11 @@
 using namespace smart_pointer;
 namespace {
 
+static_assert(std::is_nothrow_move_constructible<forward_list<int>>::value, "forward_list's move constructor can throw.");
+static_assert(std::is_nothrow_move_assignable<forward_list<int>>::value, "forward_list's move assignment can throw.");
+// Currently not supported by gcc:
+// static_assert(std::is_nothrow_destructible<forward_list<int>>::value, "forward_list's destructor can throw.");
+
 void test_semantics() {
 	forward_list<int> fl;
 	fl.emplace_front(5);
