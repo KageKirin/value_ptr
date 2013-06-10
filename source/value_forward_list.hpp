@@ -71,8 +71,8 @@ public:
 	public:
 		typedef forward_list::value_type value_type;
 		typedef forward_list::difference_type difference_type;
-		typedef forward_list::const_pointer pointer;
-		typedef forward_list::const_reference reference;
+		typedef forward_list::pointer pointer;
+		typedef forward_list::reference reference;
 		typedef std::forward_iterator_tag iterator_category;
 
 		constexpr iterator() noexcept:
@@ -87,10 +87,10 @@ public:
 			operator++();
 			return temp;
 		}
-		T & operator*() const {
+		reference operator*() const {
 			return static_cast<node *>(m_value)->value;
 		}
-		T * operator->() const {
+		pointer operator->() const {
 			return & operator*();
 		}
 		friend constexpr bool operator==(iterator lhs, iterator rhs) noexcept {
@@ -137,10 +137,10 @@ public:
 			operator++();
 			return temp;
 		}
-		T const & operator*() const {
+		reference operator*() const {
 			return static_cast<node const *>(m_value)->value;
 		}
-		T const * operator->() const {
+		pointer operator->() const {
 			return & operator*();
 		}
 		friend constexpr bool operator==(const_iterator lhs, const_iterator rhs) noexcept {
