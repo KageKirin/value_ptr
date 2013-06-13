@@ -281,8 +281,7 @@ public:
 	
 	template<typename... Args>
 	iterator emplace_after(const_iterator position, Args&&... args) {
-		ptr_type value(static_cast<node_link *>(new node(std::forward<Args>(args)...)));
-		return insert_pointer_after(position, std::move(value));
+		return insert_pointer_after(position, make_value<node>(std::forward<Args>(args)...));
 	}
 	template<typename... Args>
 	void emplace_front(Args&&... args) {
