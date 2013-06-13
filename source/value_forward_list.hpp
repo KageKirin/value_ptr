@@ -212,9 +212,7 @@ public:
 	// implementation is theoretically slightly slower because it involves
 	// setting pointers to nullptr.
 	~forward_list() noexcept {
-		while (!empty()) {
-			pop_front();
-		}
+		clear();
 	}
 	
 	void assign(size_type count, value_type const & value) {
@@ -276,7 +274,9 @@ public:
 	}
 	
 	void clear() noexcept {
-		m_before_first.next.reset();
+		while (!empty()) {
+			pop_front();
+		}
 	}
 	
 	template<typename... Args>
