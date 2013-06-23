@@ -42,10 +42,16 @@ private:
 	typedef typename std::unique_ptr<T, Deleter> unique_ptr_type;
 	typedef std::tuple<unique_ptr_type, Cloner, detail::empty_class> base_type;
 public:
-	typedef typename unique_ptr_type::pointer pointer;
-	typedef typename unique_ptr_type::element_type element_type;
 	typedef Cloner cloner_type;
 	typedef typename unique_ptr_type::deleter_type deleter_type;
+private:
+	typedef typename std::conditional<std::is_reference<cloner_type>::value, cloner_type, cloner_type const &>::type cloner_lvalue_reference;
+	typedef typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type deleter_lvalue_reference;
+	typedef typename std::remove_reference<cloner_type>::type && cloner_rvalue_reference;
+	typedef typename std::remove_reference<deleter_type>::type && deleter_rvalue_reference;
+public:
+	typedef typename unique_ptr_type::pointer pointer;
+	typedef typename unique_ptr_type::element_type element_type;
 	
 	constexpr value_ptr() noexcept {}
 	constexpr value_ptr(std::nullptr_t) noexcept:
@@ -54,15 +60,36 @@ public:
 	explicit value_ptr(pointer p) noexcept:
 		base(unique_ptr_type(p), cloner_type(), detail::empty_class()) {
 	}
-	value_ptr(pointer p, typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type deleter) noexcept:
+
+	value_ptr(pointer p, cloner_lvalue_reference cloner) noexcept:
+		base(unique_ptr_type(p), cloner, detail::empty_class()) {
+	}
+	value_ptr(pointer p, cloner_rvalue_reference cloner) noexcept:
+		base(unique_ptr_type(p), std::move(cloner), detail::empty_class()) {
+	}
+
+	value_ptr(pointer p, deleter_lvalue_reference deleter) noexcept:
 		base(unique_ptr_type(p, deleter), cloner_type(), detail::empty_class()) {
 	}
-	value_ptr(pointer p, typename std::remove_reference<deleter_type>::type && deleter) noexcept:
+	value_ptr(pointer p, deleter_rvalue_reference deleter) noexcept:
 		base(unique_ptr_type(p, std::move(deleter)), cloner_type(), detail::empty_class()) {
 	}
 
+	value_ptr(pointer p, cloner_lvalue_reference cloner, deleter_lvalue_reference deleter) noexcept:
+		base(unique_ptr_type(p, deleter), cloner, detail::empty_class()) {
+	}
+	value_ptr(pointer p, cloner_lvalue_reference cloner, deleter_rvalue_reference deleter) noexcept:
+		base(unique_ptr_type(p, std::move(deleter)), cloner, detail::empty_class()) {
+	}
+	value_ptr(pointer p, cloner_rvalue_reference cloner, deleter_lvalue_reference deleter) noexcept:
+		base(unique_ptr_type(p, deleter), std::move(cloner), detail::empty_class()) {
+	}
+	value_ptr(pointer p, cloner_rvalue_reference cloner, deleter_rvalue_reference deleter) noexcept:
+		base(unique_ptr_type(p, std::move(deleter)), std::move(cloner), detail::empty_class()) {
+	}
+
 	value_ptr(value_ptr const & other):
-		base(clone(*other), other.get_cloner(), detail::empty_class()) {
+		base(other != nullptr ? clone(*other) : nullptr, other.get_cloner(), detail::empty_class()) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
@@ -168,7 +195,7 @@ private:
 		return std::get<0>(base);
 	}
 	unique_ptr_type clone(element_type const & other) const {
-		return get_cloner()(&other);
+		return unique_ptr_type(get_cloner()(&other));
 	}
 	base_type base;
 
@@ -177,6 +204,23 @@ private:
 };
 
 namespace detail {
+
+template<typename T, typename Cloner, typename Deleter>
+class value_if_general {
+public:
+	typedef value_ptr<T, Cloner, Deleter> object;
+};
+template<typename T, typename Cloner, typename Deleter>
+class value_if_general<T[], Cloner, Deleter> {
+public:
+	typedef value_ptr<T[], Cloner, Deleter> array;
+};
+template<typename T, typename Cloner, typename Deleter, std::size_t n>
+class value_if_general<T[n], Cloner, Deleter> {
+public:
+	typedef void known_bound;
+};
+
 template<typename T>
 class value_if {
 public:
@@ -193,6 +237,27 @@ public:
 	typedef void known_bound;
 };
 }	// namespace detail
+
+template<typename T, typename Cloner, typename Deleter, typename ... Args>
+typename detail::value_if_general<T, Cloner, Deleter>::object
+make_value_general(Cloner cloner, Deleter deleter, Args && ... args) {
+	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
+	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
+	return value_ptr<T, Cloner, Deleter>(new T(std::forward<Args>(args)...), std::move(cloner), std::move(deleter));
+}
+
+template<typename T, typename Cloner, typename Deleter, typename ... Args>
+typename detail::value_if_general<T, Cloner, Deleter>::array
+make_value_general(std::size_t const n, Cloner cloner, Deleter deleter) {
+	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
+	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
+	typedef typename std::remove_extent<T>::type U;
+	return value_ptr<T, Cloner, Deleter>(new U[n](), std::move(cloner), std::move(deleter));
+}
+
+template<typename T, typename Cloner, typename Deleter, typename ... Args>
+typename detail::value_if_general<T, Cloner, Deleter>::known_bound
+make_value_general(std::size_t const n, Cloner cloner, Deleter deleter) = delete;
 
 // TODO: add support for other allocators / deleters, possibly?
 template<typename T, typename ... Args>

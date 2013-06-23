@@ -64,12 +64,15 @@ void test_performance(std::size_t const loop_count) {
 	auto const constructed = std::chrono::high_resolution_clock::now();
 	fl.sort();
 	auto const sorted = std::chrono::high_resolution_clock::now();
+	auto fl2 = fl;
+	auto const copied = std::chrono::high_resolution_clock::now();
 	fl.reverse();
 	auto const reversed = std::chrono::high_resolution_clock::now();
-	typedef std::chrono::microseconds unit;
+	typedef std::chrono::milliseconds unit;
 	std::cout << "Construction time: " << std::chrono::duration_cast<unit>(constructed - start).count() << '\n';
 	std::cout << "Sorting time: " << std::chrono::duration_cast<unit>(sorted - constructed).count() << '\n';
-	std::cout << "Reversing time: " << std::chrono::duration_cast<unit>(reversed - sorted).count() << '\n';
+	std::cout << "Copying time: " << std::chrono::duration_cast<unit>(copied - sorted).count() << '\n';
+	std::cout << "Reversing time: " << std::chrono::duration_cast<unit>(reversed - copied).count() << '\n';
 }
 
 }	// namespace

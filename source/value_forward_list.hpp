@@ -21,20 +21,41 @@
 #include <cassert>
 #include <iterator>
 #include <vector>
-#include <iostream>
 #include "value_ptr.hpp"
 
 namespace smart_pointer {
 namespace detail {
-namespace forward_list {
+namespace fl {
+
+template<typename T, typename Allocator>
+class node;
+template<typename T, typename Allocator>
+class node_link;
+
+template<typename T, typename Allocator>
+class node_cloner {
+public:
+	node_link<T, Allocator> * operator()(node_link<T, Allocator> const * const other) const {
+		typedef node<T, Allocator> node_type;
+		return new node_type(static_cast<node_type const &>(*other));
+	}
+};
+
+template<typename T, typename Allocator>
+class node_deleter {
+public:
+	void operator()(node_link<T, Allocator> * ptr) const noexcept {
+		delete static_cast<node<T, Allocator> *>(ptr);
+	}
+};
 
 template<typename T, typename Allocator>
 class node_link {
 public:
-	node_link() noexcept:
-		next(nullptr) {
-	}
-	value_ptr<node_link<T, Allocator>> next;
+	typedef node_cloner<T, Allocator> cloner_type;
+	typedef node_deleter<T, Allocator> deleter_type;
+	typedef value_ptr<node_link, cloner_type, deleter_type> ptr_type;
+	ptr_type next;
 };
 
 template<typename T, typename Allocator>
@@ -47,7 +68,7 @@ public:
 	T value;
 };
 
-}	// namespace forward_list
+}	// namespace fl
 }	// namespace detail
 
 template<typename T, typename Allocator = std::allocator<T>>
@@ -56,9 +77,9 @@ public:
 	typedef T value_type;
 	typedef Allocator allocator_type;
 private:
-	typedef detail::forward_list::node_link<value_type, allocator_type> node_link;
-	typedef detail::forward_list::node<value_type, allocator_type> node;
-	typedef value_ptr<node_link> ptr_type;
+	typedef detail::fl::node_link<value_type, allocator_type> node_link;
+	typedef detail::fl::node<value_type, allocator_type> node;
+	typedef typename node_link::ptr_type ptr_type;
 public:
 	typedef std::size_t size_type;
 	typedef std::ptrdiff_t difference_type;
@@ -201,16 +222,23 @@ public:
 		forward_list(std::begin(init), std::end(init), alloc) {
 	}
 
-	forward_list(forward_list const & other) = default;
+	// The default copy constructor, copy assignment operator, and destructor
+	// give the correct behavior on an abstract C++ machine, but in reality this
+	// implementation makes recursive calls that cause a stack overflow for
+	// large lists. This implementation is theoretically slightly slower because
+	// it involves setting pointers to nullptr for the destructor and
+	// initializing an empty first node for the copy constructor, but the
+	// optimizer should take care of that.
+
+	forward_list(forward_list const & other):
+		forward_list(std::begin(other), std::end(other)) {
+	}
 	forward_list(forward_list && other) = default;
-	forward_list & operator=(forward_list const & other) = default;
+	forward_list & operator=(forward_list const & other) {
+		assign(std::begin(other), std::end(other));
+	}
 	forward_list & operator=(forward_list && other) = default;
 
-	// The default destructor gives the correct behavior on an abstract C++
-	// machine, but in reality the destructor of value_ptr makes recursive calls
-	// to itself that causes a stack overflow for large lists. This
-	// implementation is theoretically slightly slower because it involves
-	// setting pointers to nullptr.
 	~forward_list() noexcept {
 		clear();
 	}
@@ -281,7 +309,8 @@ public:
 	
 	template<typename... Args>
 	iterator emplace_after(const_iterator position, Args&&... args) {
-		return insert_pointer_after(position, make_value<node>(std::forward<Args>(args)...));
+		auto ptr = make_value_general<node>(typename node_link::cloner_type{}, typename node_link::deleter_type{}, std::forward<Args>(args)...);
+		return insert_pointer_after(position, std::move(ptr));
 	}
 	template<typename... Args>
 	void emplace_front(Args&&... args) {

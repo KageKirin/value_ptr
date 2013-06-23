@@ -32,8 +32,8 @@ public:
 	constexpr default_new() noexcept {}
 	template<typename U>
 	constexpr default_new(default_new<U> const & other) noexcept {}
-	std::unique_ptr<T> operator()(T const * const other) const {
-		return std::unique_ptr<T>(new T(*other));
+	T * operator()(T const * const other) const {
+		return new T(*other);
 	}
 };
 template<typename T, std::size_t n>
@@ -42,10 +42,10 @@ public:
 	constexpr default_new() noexcept {}
 	template<typename U, std::size_t m>
 	constexpr default_new(default_new<U[m]> const & other) noexcept {}
-	std::unique_ptr<T[]> operator()(T const (& other)[n]) const {
+	T * operator()(T const (& other)[n]) const {
 		auto result = new T[n];
 		std::copy(std::begin(other), std::end(other), std::begin(result));
-		return std::unique_ptr<T[]>(result);
+		return result;
 	}
 };
 
