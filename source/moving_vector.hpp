@@ -39,6 +39,50 @@ public:
 	using const_iterator = typename container_type::const_iterator;
 	using reverse_iterator = typename container_type::reverse_iterator;
 	using const_reverse_iterator = typename container_type::const_reverse_iterator;
+	
+	explicit moving_vector(Allocator const & allocator = Allocator{}) {
+	}
+	explicit moving_vector(size_type count, Allocator const & allocator = Allocator{}) {
+		for (size_type n = 0; n != count; ++n) {
+			emplace_back();
+		}
+	}
+	moving_vector(size_type count, T const & value, Allocator const & allocator = Allocator{}) {
+		for (size_type n = 0; n != count; ++n) {
+			emplace_back(value);
+		}
+	}
+	template<typename InputIterator>
+	moving_vector(InputIterator first, InputIterator last, Allocator const & allocator = Allocator{}) {
+		for (; first != last; ++first) {
+			emplace_back(*first);
+		}
+	}
+	moving_vector(moving_vector const & other, Allocator const & allocator):
+		moving_vector(other) {
+	}
+	moving_vector(moving_vector && other, Allocator const & allocator):
+		moving_vector(std::move(other)) {
+	}
+	moving_vector(std::initializer_list<T> init, Allocator const & allocator = Allocator{}):
+		moving_vector(std::begin(init), std::end(init), allocator) {
+	}
+	
+	void assign(size_type count, T const & value) {
+		operator=(moving_vector(count, value));
+	}
+	template<typename InputIterator>
+	void assign(InputIterator first, InputIterator last) {
+		operator=(moving_vector(first, last));
+	}
+	void assign(std::initializer_list<T> init) {
+		operator=(moving_vector(init));
+	}
+	
+	template<typename... Args>
+	void emplace_back(Args && ... args) {
+		container.emplace_back(make_value<T>(std::forward<Args>(args)...));
+	}
 private:
 	container_type container;
 };

@@ -19,4 +19,5 @@
 using namespace smart_pointer;
 
 int main(int argc, char ** argv) {
+	moving_vector<int> v({2, 5, 6, 2, -3});
 }
