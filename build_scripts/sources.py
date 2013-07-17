@@ -34,5 +34,6 @@ def prepend_dir(directory, sources):
 value_ptr_tests = ('test', ['value_ptr.cpp'], [], [])
 forward_list_tests = ('forward_list', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=false'], [])
 forward_list_std_tests = ('forward_list_std', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=true'], [])
+moving_vector_tests = ('moving_vector', ['moving_vector.cpp'], [], [])
 
-base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests]
+base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests, moving_vector_tests]
