@@ -178,7 +178,7 @@ public:
 		return *get();
 	}
 	pointer operator->() const noexcept {
-		static_assert(!std::is_array<T>::value, "operator* cannot be used with array types.");
+		static_assert(!std::is_array<T>::value, "operator-> cannot be used with array types.");
 		return get();
 	}
 
