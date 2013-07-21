@@ -31,14 +31,14 @@ public:
 	using allocator_type = Allocator;
 	using size_type = typename container_type::size_type;
 	using difference_type = typename container_type::difference_type;
-	using reference = typename container_type::reference;
-	using const_reference = typename container_type::const_reference;
-	using pointer = typename container_type::pointer;
-	using const_pointer = typename container_type::const_pointer;
-	using iterator = typename container_type::iterator;
+	using const_reference = value_type const &;
+	using reference = value_type &;
+	using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
+	using pointer = typename std::allocator_traits<Allocator>::pointer;
 	using const_iterator = typename container_type::const_iterator;
-	using reverse_iterator = typename container_type::reverse_iterator;
-	using const_reverse_iterator = typename container_type::const_reverse_iterator;
+	using iterator = typename container_type::iterator;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+	using reverse_iterator = std::reverse_iterator<iterator>;
 	
 	explicit moving_vector(Allocator const & allocator = Allocator{}) {
 	}
@@ -77,6 +77,64 @@ public:
 	}
 	void assign(std::initializer_list<T> init) {
 		operator=(moving_vector(init));
+	}
+	
+	constexpr const_reference at(size_type position) const {
+		return *container.at(position);
+	}
+	reference at(size_type position) {
+		return *container.at(position);
+	}
+	constexpr const_reference operator[](size_type position) const {
+		return *container[position];
+	}
+	reference operator[](size_type position) {
+		return *container[position];
+	}
+	
+	constexpr const_reference front() const {
+		return *begin();
+	}
+	reference front() {
+		return *begin();
+	}
+	constexpr const_reference back() const {
+		return *std::prev(end());
+	}
+	reference back() {
+		return *std::prev(end());
+	}
+	
+	const_iterator begin() const noexcept {
+	}
+	iterator begin() noexcept {
+	}
+	const_iterator cbegin() const noexcept {
+		return begin();
+	}
+	
+	const_iterator end() const noexcept {
+	}
+	iterator end() noexcept {
+	}
+	const_iterator cend() const noexcept {
+		return end();
+	}
+	
+	const_reverse_iterator rbegin() const noexcept {
+	}
+	reverse_iterator rbegin() noexcept {
+	}
+	const_reverse_iterator crbegin() const noexcept {
+		return rbegin();
+	}
+	
+	const_reverse_iterator rend() const noexcept {
+	}
+	reverse_iterator rend() noexcept {
+	}
+	const_reverse_iterator crend() const noexcept {
+		return rend();
 	}
 	
 	template<typename... Args>
