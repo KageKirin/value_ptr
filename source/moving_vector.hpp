@@ -88,6 +88,10 @@ private:
 		constexpr explicit iterator_base(element_type * const other) noexcept:
 			ptr(other) {
 		}
+		constexpr typename container_type::const_iterator make_base_iterator(container_type const & base) const noexcept {
+			difference_type const offset = ptr - base.data();
+			return base.begin() + offset;
+		}
 		element_type * ptr;
 	};
 
@@ -171,6 +175,8 @@ public:
 		return *std::prev(end());
 	}
 	
+	// data() intentionally missing
+	
 	const_iterator begin() const noexcept {
 		return const_iterator(container.data());
 	}
@@ -211,13 +217,113 @@ public:
 		return rend();
 	}
 	
+	bool empty() const noexcept {
+		return size() == 0;
+	}
 	size_type size() const noexcept {
 		return container.size();
 	}
+	size_type max_size() const noexcept {
+		return container.max_size();
+	}
+
+	size_type capacity() const noexcept {
+		return container.capacity();
+	}
+	void reserve(size_type const new_capacity) noexcept {
+		return container.reserve(new_capacity);
+	}
+	// shink_to_fit can offer the noexcept guarantee despite std::vector being
+	// unable to do so because value_ptr's move constructor is noexcept
+	void shink_to_fit() noexcept {
+		container.shrink_to_fit();
+	}
 	
+	void clear() noexcept {
+		container.clear();
+	}
+	
+	template<typename... Args>
+	iterator emplace(const_iterator const position, Args && ... args) {
+		return container.emplace(position.make_base_iterator(container), make_value<T>(std::forward<Args>(args)...));
+	}
+	
+	iterator insert(const_iterator const position, T const & value) {
+		return emplace(position, value);
+	}
+	iterator insert(const_iterator const position, T && value) {
+		return emplace(position, std::move(value));
+	}
+	iterator insert(const_iterator const position, size_type const count, T const & value) {
+		for (size_type n = 0; n != count; ++n) {
+			emplace(position, value);
+		}
+	}
+	template<typename InputIterator>
+	iterator insert(const_iterator const position, InputIterator first, InputIterator const last) {
+		if (first == last) {
+			return position;
+		}
+		for ( ; first != last; ++first) {
+			emplace(position, *first);
+		}
+		return std::next(position);
+	}
+	iterator insert(const_iterator const position, std::initializer_list<T> ilist) {
+		if (ilist.empty()) {
+			return position;
+		}
+		for (auto const & value : ilist) {
+			emplace(position, value);
+		}
+		return std::next(position);
+	}
+
 	template<typename... Args>
 	void emplace_back(Args && ... args) {
 		container.emplace_back(make_value<T>(std::forward<Args>(args)...));
+	}
+	
+	void push_back(T const & value) {
+		emplace_back(value);
+	}
+	void push_back(T && value) {
+		emplace_back(std::move(value));
+	}
+	
+	iterator erase(const_iterator const position) {
+		return container.erase(position.make_base_iterator(container));
+	}
+	iterator erase(const_iterator const first, const_iterator const last) {
+		return container.erase(first.make_base_iterator(container), last.make_base_iterator(container));
+	}
+	void pop_back() {
+		container.pop_back();
+	}
+	
+	void resize(size_type const new_size) {
+		auto old_size = size();
+		container.resize(new_size);
+		for ( ; old_size <= new_size; ++old_size) {
+			container[old_size] = make_value<T>();
+		}
+	}
+	void resize(size_type const count, T const & value) {
+		container.resize(count, make_value<T>(value));
+	}
+	void resize(size_type const count, T && value) {
+		container.resize(count, make_value<T>(std::move(value)));
+	}
+	
+	void swap(moving_vector & other) noexcept {
+		container.swap(other.container);
+	}
+
+	friend bool operator==(moving_vector const & lhs, moving_vector const & rhs) noexcept {
+		return lhs.container == rhs.container;
+	}
+	friend bool operator<(moving_vector const & lhs, moving_vector const & rhs) noexcept {
+		return lhs.container < rhs.container;
 	}
 
 	template<typename U>
@@ -256,6 +362,28 @@ public:
 private:
 	container_type container;
 };
+
+template<typename T, typename Allocator>
+void swap(moving_vector<T, Allocator> & lhs, moving_vector<T, Allocator> & rhs) noexcept {
+	lhs.swap(rhs);
+}
+
+template<typename T, typename Allocator>
+bool operator!=(moving_vector<T, Allocator> const & lhs, moving_vector<T, Allocator> const & rhs) noexcept {
+	return !(lhs == rhs);
+}
+template<typename T, typename Allocator>
+bool operator>(moving_vector<T, Allocator> const & lhs, moving_vector<T, Allocator> const & rhs) noexcept {
+	return rhs < lhs;
+}
+template<typename T, typename Allocator>
+bool operator<=(moving_vector<T, Allocator> const & lhs, moving_vector<T, Allocator> const & rhs) noexcept {
+	return !(lhs > rhs);
+}
+template<typename T, typename Allocator>
+bool operator>=(moving_vector<T, Allocator> const & lhs, moving_vector<T, Allocator> const & rhs) noexcept {
+	return !(lhs < rhs);
+}
 
 }	// namespace smart_pointer
 #endif	// VALUE_PTR_MOVING_VECTOR_HPP_
