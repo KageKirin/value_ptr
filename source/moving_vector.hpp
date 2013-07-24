@@ -135,14 +135,14 @@ public:
 	}
 	
 	void assign(size_type count, T const & value) {
-		operator=(moving_vector(count, value));
+		*this = moving_vector(count, value);
 	}
 	template<typename InputIterator>
 	void assign(InputIterator first, InputIterator last) {
-		operator=(moving_vector(first, last));
+		*this = moving_vector(first, last);
 	}
 	void assign(std::initializer_list<T> init) {
-		operator=(moving_vector(init));
+		*this = moving_vector(init);
 	}
 	
 	constexpr const_reference at(size_type position) const {
