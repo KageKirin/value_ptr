@@ -15,9 +15,12 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "moving_vector.hpp"
+#include <algorithm>
+#include <cassert>
 
 using namespace smart_pointer;
 
 int main(int argc, char ** argv) {
 	moving_vector<int> v({2, 5, 6, 2, -3});
+	assert(std::accumulate(v.begin(), v.end(), 0) == 2 + 5 + 6 + 2 - 3);
 }

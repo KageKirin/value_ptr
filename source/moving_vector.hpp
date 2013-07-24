@@ -25,7 +25,72 @@ namespace smart_pointer {
 template<typename T, typename Allocator = std::allocator<T>>
 class moving_vector {
 private:
-	using container_type = std::vector<value_ptr<T>>;
+	using element_type = value_ptr<T>;
+	using container_type = std::vector<element_type>;
+	template<typename U>
+	class iterator_base {
+	public:
+		using value_type = U;
+		using difference_type = std::ptrdiff_t;
+		using pointer = U *;
+		using reference = U &;
+		using iterator_category = std::random_access_iterator_tag;
+		constexpr iterator_base() noexcept = default;
+		reference operator*() const {
+			return **ptr;
+		}
+		pointer operator->() const {
+			return & this->operator*();
+		}
+		iterator_base & operator++() {
+			++ptr;
+			return *this;
+		}
+		iterator_base operator++(int) {
+			auto & self = *this;
+			operator++();
+			return self;
+		}
+		iterator_base & operator--() {
+			--ptr;
+			return *this;
+		}
+		iterator_base operator--(int) {
+			auto & self = *this;
+			operator--();
+			return self;
+		}
+		template<typename Integer>
+		iterator_base & operator+=(Integer integer) {
+			ptr += integer;
+			return *this;
+		}
+		template<typename Integer>
+		iterator_base & operator-=(Integer integer) {
+			ptr -= integer;
+			return *this;
+		}
+		template<typename Integer>
+		reference operator[](Integer const index) {
+			return ptr[index];
+		}
+		constexpr operator iterator_base<U const> () noexcept {
+			return iterator_base<U const>(ptr);
+		}
+		friend constexpr bool operator==(iterator_base const lhs, iterator_base const rhs) noexcept {
+			return lhs.ptr == rhs.ptr;
+		}
+		friend constexpr bool operator<(iterator_base const lhs, iterator_base const rhs) noexcept {
+			return lhs.ptr < rhs.ptr;
+		}
+	private:
+		friend class moving_vector;
+		constexpr explicit iterator_base(element_type * const other) noexcept:
+			ptr(other) {
+		}
+		element_type * ptr;
+	};
+
 public:
 	using value_type = T;
 	using allocator_type = Allocator;
@@ -35,8 +100,9 @@ public:
 	using reference = value_type &;
 	using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
 	using pointer = typename std::allocator_traits<Allocator>::pointer;
-	using const_iterator = typename container_type::const_iterator;
-	using iterator = typename container_type::iterator;
+	
+	using const_iterator = iterator_base<T const>;
+	using iterator = iterator_base<T>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	
@@ -106,40 +172,86 @@ public:
 	}
 	
 	const_iterator begin() const noexcept {
+		return const_iterator(container.data());
 	}
 	iterator begin() noexcept {
+		return iterator(container.data());
 	}
 	const_iterator cbegin() const noexcept {
 		return begin();
 	}
 	
 	const_iterator end() const noexcept {
+		return begin() + size();
 	}
 	iterator end() noexcept {
+		return begin() + size();
 	}
 	const_iterator cend() const noexcept {
 		return end();
 	}
 	
 	const_reverse_iterator rbegin() const noexcept {
+		return const_reverse_iterator(end());
 	}
 	reverse_iterator rbegin() noexcept {
+		return reverse_iterator(end());
 	}
 	const_reverse_iterator crbegin() const noexcept {
 		return rbegin();
 	}
 	
 	const_reverse_iterator rend() const noexcept {
+		return const_reverse_iterator(begin());
 	}
 	reverse_iterator rend() noexcept {
+		return reverse_iterator(begin());
 	}
 	const_reverse_iterator crend() const noexcept {
 		return rend();
 	}
 	
+	size_type size() const noexcept {
+		return container.size();
+	}
+	
 	template<typename... Args>
 	void emplace_back(Args && ... args) {
 		container.emplace_back(make_value<T>(std::forward<Args>(args)...));
+	}
+
+	template<typename U>
+	friend constexpr bool operator!=(iterator_base<U> const lhs, iterator_base<U> const rhs) noexcept {
+		return !(lhs == rhs);
+	}
+	template<typename U>
+	friend constexpr bool operator>(iterator_base<U> const lhs, iterator_base<U> const rhs) noexcept {
+		return rhs < lhs;
+	}
+	template<typename U>
+	friend constexpr bool operator<=(iterator_base<U> const lhs, iterator_base<U> const rhs) noexcept {
+		return !(lhs > rhs);
+	}
+	template<typename U>
+	friend constexpr bool operator>=(iterator_base<U> const lhs, iterator_base<U> const rhs) noexcept {
+		return !(lhs < rhs);
+	}
+
+	template<typename U, typename Integer>
+	friend constexpr iterator_base<U> operator+(iterator_base<U> lhs, Integer const rhs) {
+		return lhs += rhs;
+	}
+	template<typename U, typename Integer>
+	friend constexpr iterator_base<U> operator+(Integer const lhs, iterator_base<U> rhs) {
+		return rhs += lhs;
+	}
+	template<typename U, typename Integer>
+	friend constexpr iterator_base<U> operator-(iterator_base<U> lhs, Integer const rhs) {
+		return lhs -= rhs;
+	}
+	template<typename U, typename Integer>
+	friend constexpr iterator_base<U> operator-(Integer const lhs, iterator_base<U> rhs) {
+		return rhs -= lhs;
 	}
 private:
 	container_type container;
