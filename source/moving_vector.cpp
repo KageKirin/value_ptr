@@ -40,4 +40,7 @@ int main(int argc, char ** argv) {
 	auto const last = std::unique(v.begin(), v.end());
 	v.erase(last, v.end());
 	assert(v == container_after_unique());
+	moving_vector<moving_vector<int>> inception(5);
+	assert(inception.size() == 5);
+	assert(inception.front().size() == 0);
 }
