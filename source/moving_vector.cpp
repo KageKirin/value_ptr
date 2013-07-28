@@ -43,4 +43,6 @@ int main(int argc, char ** argv) {
 	moving_vector<moving_vector<int>> inception(5);
 	assert(inception.size() == 5);
 	assert(inception.front().size() == 0);
+	inception.front().assign(v.begin(), v.end());
+	assert(inception.front() == v);
 }
