@@ -235,9 +235,7 @@ public:
 	void reserve(size_type const new_capacity) noexcept {
 		return container.reserve(new_capacity);
 	}
-	// shink_to_fit can offer the noexcept guarantee despite std::vector being
-	// unable to do so because value_ptr's move constructor is noexcept
-	void shink_to_fit() noexcept {
+	void shink_to_fit() {
 		container.shrink_to_fit();
 	}
 	
