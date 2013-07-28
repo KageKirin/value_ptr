@@ -248,7 +248,7 @@ public:
 	
 	template<typename... Args>
 	iterator emplace(const_iterator const position, Args && ... args) {
-		return container.emplace(position.make_base_iterator(container), make_value<T>(std::forward<Args>(args)...));
+		return iterator(container.emplace(position.make_base_mutable_iterator(container), make_value<T>(std::forward<Args>(args)...)));
 	}
 	
 	iterator insert(const_iterator const position, T const & value) {
