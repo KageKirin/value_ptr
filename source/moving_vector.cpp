@@ -21,6 +21,9 @@
 using namespace smart_pointer;
 
 int main(int argc, char ** argv) {
+	assert(moving_vector<int>({1, 2, 2, 3}) == moving_vector<int>({1, 2, 2, 3}));
 	moving_vector<int> v({2, 5, 6, 2, -3});
 	assert(std::accumulate(v.begin(), v.end(), 0) == 2 + 5 + 6 + 2 - 3);
+	std::sort(v.begin(), v.end());
+	assert(v == moving_vector<int>({-3, 2, 2, 5, 6}));
 }

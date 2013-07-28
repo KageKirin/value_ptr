@@ -60,15 +60,16 @@ private:
 			operator--();
 			return self;
 		}
-		template<typename Integer>
-		iterator_base & operator+=(Integer integer) {
-			ptr += integer;
+		iterator_base & operator+=(difference_type const offset) {
+			ptr += offset;
 			return *this;
 		}
-		template<typename Integer>
-		iterator_base & operator-=(Integer integer) {
-			ptr -= integer;
+		iterator_base & operator-=(difference_type const offset) {
+			ptr -= offset;
 			return *this;
+		}
+		friend constexpr difference_type operator-(iterator_base const lhs, iterator_base const rhs) {
+			return lhs.ptr - rhs.ptr;
 		}
 		template<typename Integer>
 		reference operator[](Integer const index) {
@@ -84,15 +85,16 @@ private:
 			return lhs.ptr < rhs.ptr;
 		}
 	private:
+		using indirection_type = typename std::conditional<std::is_const<U>::value, element_type const, element_type>::type;
 		friend class moving_vector;
-		constexpr explicit iterator_base(element_type * const other) noexcept:
+		constexpr explicit iterator_base(indirection_type * const other) noexcept:
 			ptr(other) {
 		}
 		constexpr typename container_type::const_iterator make_base_iterator(container_type const & base) const noexcept {
-			difference_type const offset = ptr - base.data();
+			auto const offset = ptr - base.data();
 			return base.begin() + offset;
 		}
-		element_type * ptr;
+		indirection_type * ptr;
 	};
 
 public:
@@ -188,10 +190,10 @@ public:
 	}
 	
 	const_iterator end() const noexcept {
-		return begin() + size();
+		return begin() + static_cast<difference_type>(size());
 	}
 	iterator end() noexcept {
-		return begin() + size();
+		return begin() + static_cast<difference_type>(size());
 	}
 	const_iterator cend() const noexcept {
 		return end();
@@ -320,10 +322,10 @@ public:
 	}
 
 	friend bool operator==(moving_vector const & lhs, moving_vector const & rhs) noexcept {
-		return lhs.container == rhs.container;
+		return lhs.size() == rhs.size() and std::equal(lhs.begin(), lhs.end(), rhs.begin());
 	}
 	friend bool operator<(moving_vector const & lhs, moving_vector const & rhs) noexcept {
-		return lhs.container < rhs.container;
+		return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
 	}
 
 	template<typename U>
@@ -343,21 +345,17 @@ public:
 		return !(lhs < rhs);
 	}
 
-	template<typename U, typename Integer>
-	friend constexpr iterator_base<U> operator+(iterator_base<U> lhs, Integer const rhs) {
+	template<typename U>
+	friend constexpr iterator_base<U> operator+(iterator_base<U> lhs, typename iterator_base<U>::difference_type const rhs) {
 		return lhs += rhs;
 	}
-	template<typename U, typename Integer>
-	friend constexpr iterator_base<U> operator+(Integer const lhs, iterator_base<U> rhs) {
+	template<typename U>
+	friend constexpr iterator_base<U> operator+(typename iterator_base<U>::difference_type const lhs, iterator_base<U> rhs) {
 		return rhs += lhs;
 	}
-	template<typename U, typename Integer>
-	friend constexpr iterator_base<U> operator-(iterator_base<U> lhs, Integer const rhs) {
+	template<typename U>
+	friend constexpr iterator_base<U> operator-(iterator_base<U> lhs, typename iterator_base<U>::difference_type const rhs) {
 		return lhs -= rhs;
-	}
-	template<typename U, typename Integer>
-	friend constexpr iterator_base<U> operator-(Integer const lhs, iterator_base<U> rhs) {
-		return rhs -= lhs;
 	}
 private:
 	container_type container;
