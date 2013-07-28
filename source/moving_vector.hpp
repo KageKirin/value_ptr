@@ -35,15 +35,15 @@ private:
 		using pointer = U *;
 		using reference = U &;
 		using iterator_category = std::random_access_iterator_tag;
-		constexpr iterator_base() noexcept = default;
+		constexpr iterator_base() = default;
 		reference operator*() const {
-			return **ptr;
+			return **it;
 		}
 		pointer operator->() const {
 			return & this->operator*();
 		}
 		iterator_base & operator++() {
-			++ptr;
+			++it;
 			return *this;
 		}
 		iterator_base operator++(int) {
@@ -52,7 +52,7 @@ private:
 			return self;
 		}
 		iterator_base & operator--() {
-			--ptr;
+			--it;
 			return *this;
 		}
 		iterator_base operator--(int) {
@@ -61,40 +61,43 @@ private:
 			return self;
 		}
 		iterator_base & operator+=(difference_type const offset) {
-			ptr += offset;
+			it += offset;
 			return *this;
 		}
 		iterator_base & operator-=(difference_type const offset) {
-			ptr -= offset;
+			it -= offset;
 			return *this;
 		}
 		friend constexpr difference_type operator-(iterator_base const lhs, iterator_base const rhs) {
-			return lhs.ptr - rhs.ptr;
+			return lhs.it - rhs.it;
 		}
 		template<typename Integer>
 		reference operator[](Integer const index) {
-			return ptr[index];
+			return it[index];
 		}
 		constexpr operator iterator_base<U const> () noexcept {
-			return iterator_base<U const>(ptr);
+			return iterator_base<U const>(it);
 		}
 		friend constexpr bool operator==(iterator_base const lhs, iterator_base const rhs) noexcept {
-			return lhs.ptr == rhs.ptr;
+			return lhs.it == rhs.it;
 		}
 		friend constexpr bool operator<(iterator_base const lhs, iterator_base const rhs) noexcept {
-			return lhs.ptr < rhs.ptr;
+			return lhs.it < rhs.it;
 		}
 	private:
 		using indirection_type = typename std::conditional<std::is_const<U>::value, element_type const, element_type>::type;
+		using base_iterator = typename std::conditional<std::is_const<U>::value, typename container_type::const_iterator, typename container_type::iterator>::type;
 		friend class moving_vector;
-		constexpr explicit iterator_base(indirection_type * const other) noexcept:
-			ptr(other) {
+		constexpr explicit iterator_base(base_iterator const other) noexcept:
+			it(other) {
 		}
 		constexpr typename container_type::const_iterator make_base_iterator(container_type const & base) const noexcept {
-			auto const offset = ptr - base.data();
-			return base.begin() + offset;
+			return base.begin() + (it - base.begin());
 		}
-		indirection_type * ptr;
+		constexpr typename container_type::iterator make_base_mutable_iterator(container_type & base) const noexcept {
+			return base.begin() + (it - base.begin());
+		}
+		base_iterator it;
 	};
 
 public:
@@ -180,10 +183,10 @@ public:
 	// data() intentionally missing
 	
 	const_iterator begin() const noexcept {
-		return const_iterator(container.data());
+		return const_iterator(container.begin());
 	}
 	iterator begin() noexcept {
-		return iterator(container.data());
+		return iterator(container.begin());
 	}
 	const_iterator cbegin() const noexcept {
 		return begin();
@@ -291,11 +294,12 @@ public:
 		emplace_back(std::move(value));
 	}
 	
+	// Too many compilers don't support const_iterator inputs for erase
 	iterator erase(const_iterator const position) {
-		return container.erase(position.make_base_iterator(container));
+		return iterator(container.erase(position.make_base_mutable_iterator(container)));
 	}
 	iterator erase(const_iterator const first, const_iterator const last) {
-		return container.erase(first.make_base_iterator(container), last.make_base_iterator(container));
+		return iterator(container.erase(first.make_base_mutable_iterator(container), last.make_base_mutable_iterator(container)));
 	}
 	void pop_back() {
 		container.pop_back();

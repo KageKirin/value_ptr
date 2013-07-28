@@ -20,10 +20,24 @@
 
 using namespace smart_pointer;
 
+namespace {
+moving_vector<int> container_after_unique() {
+	moving_vector<int> v;
+	v.push_back(-3);
+	for (int const value : {2, 5, 6}) {
+		v.emplace_back(value);
+	}
+	return v;
+}
+}	// namespace
+
 int main(int argc, char ** argv) {
 	assert(moving_vector<int>({1, 2, 2, 3}) == moving_vector<int>({1, 2, 2, 3}));
 	moving_vector<int> v({2, 5, 6, 2, -3});
 	assert(std::accumulate(v.begin(), v.end(), 0) == 2 + 5 + 6 + 2 - 3);
 	std::sort(v.begin(), v.end());
 	assert(v == moving_vector<int>({-3, 2, 2, 5, 6}));
+	auto const last = std::unique(v.begin(), v.end());
+	v.erase(last, v.end());
+	assert(v == container_after_unique());
 }
