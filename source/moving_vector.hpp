@@ -223,7 +223,7 @@ public:
 	}
 	
 	bool empty() const noexcept {
-		return size() == 0;
+		return container.empty();
 	}
 	size_type size() const noexcept {
 		return container.size();

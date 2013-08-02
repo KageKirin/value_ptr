@@ -14,7 +14,7 @@
 #include "moving_vector.hpp"
 
 namespace {
-using value_type = uint32_t;
+using value_type = uint8_t;
 
 value_type number() {
 	static std::random_device rd;
@@ -28,7 +28,7 @@ class Class {
 		Class() {
 			x[0] = number();
 		}
-		uint32_t value() const {
+		value_type value() const {
 			return x[0];
 		}
 		inline friend bool operator<=(Class const & lhs, Class const & rhs) {
@@ -59,6 +59,9 @@ void insert_to_file(Container const & container) {
 template<typename Container>
 void f(std::vector<Class> const & values) {
 	Container container;
+	#if defined RESERVE
+	container.reserve(values.size());
+	#endif
 	for (auto const & value : values) {
 		add(container, value);
 	}
@@ -82,5 +85,5 @@ int main(int argc, char ** argv) {
 	#endif
 	boost::timer timer;
 	f<Container>(values_to_be_copied);
-	std::cerr << "Finished in " << timer.elapsed() << " seconds.\n";
+	std::cout << "Finished in " << timer.elapsed() << " seconds.\n";
 }

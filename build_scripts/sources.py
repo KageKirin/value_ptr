@@ -36,7 +36,15 @@ forward_list_tests = ('forward_list', ['value_forward_list.cpp'], ['USE_SYSTEM_F
 forward_list_std_tests = ('forward_list_std', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=true'], [])
 moving_vector_tests = ('moving_vector', ['moving_vector.cpp'], [], [])
 
+def reserve_options(container):
+	if container != 'deque' and container != 'list':
+		return ['RESERVE', 'NO_RESERVE']
+	else:
+		return ['NO_RESERVE']
+
 performance_sources = ['performance_test_sequence.cpp']
-performance_tests = [('performance_' + container + '_' + size, performance_sources, [container.upper(), 'ARRAY_SIZE=' + size], []) for container in ['deque', 'list', 'moving_vector', 'vector'] for size in ['1', '10', '100', '1000']]
+performance_tests = [('performance_' + container + '_' + reserve + '_' + size, performance_sources, [container.upper(), reserve, 'ARRAY_SIZE=' + size], []) for container in ['deque', 'list', 'moving_vector', 'vector'] for size in ['1', '10', '40', '50', '60', '100', '200', '500', '1000'] for reserve in reserve_options(container)]
+
+
 
 base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests, moving_vector_tests] + performance_tests
