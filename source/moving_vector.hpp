@@ -178,8 +178,11 @@ public:
 	
 	using const_iterator = detail::vector::iterator_base<T, T const>;
 	using iterator = detail::vector::iterator_base<T, T>;
+	// There is no const_indirect_iterator because there is no way to enforce it
+	using indirect_iterator = detail::vector::iterator_base<T, value_ptr<T>>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
+	using reverse_indirect_iterator = std::reverse_iterator<indirect_iterator>;
 	
 	explicit moving_vector(Allocator const & allocator = Allocator{}) {
 	}
@@ -257,6 +260,9 @@ public:
 	const_iterator cbegin() const noexcept {
 		return begin();
 	}
+	indirect_iterator indirect_begin() noexcept {
+		return indirect_iterator(container.begin());
+	}
 	
 	const_iterator end() const noexcept {
 		return begin() + static_cast<difference_type>(size());
@@ -266,6 +272,9 @@ public:
 	}
 	const_iterator cend() const noexcept {
 		return end();
+	}
+	indirect_iterator indirect_end() noexcept {
+		return indirect_iterator(container.end());
 	}
 	
 	const_reverse_iterator rbegin() const noexcept {
@@ -277,6 +286,9 @@ public:
 	const_reverse_iterator crbegin() const noexcept {
 		return rbegin();
 	}
+	indirect_iterator indirect_rbegin() noexcept {
+		return indirect_iterator(indirect_end());
+	}
 	
 	const_reverse_iterator rend() const noexcept {
 		return const_reverse_iterator(begin());
@@ -286,6 +298,9 @@ public:
 	}
 	const_reverse_iterator crend() const noexcept {
 		return rend();
+	}
+	indirect_iterator indirect_rend() noexcept {
+		return indirect_iterator(indirect_begin());
 	}
 	
 	bool empty() const noexcept {
@@ -360,7 +375,6 @@ public:
 		emplace_back(std::move(value));
 	}
 	
-	// Too many compilers don't support const_iterator inputs for erase
 	iterator erase(const_iterator const position) {
 		return iterator(container.erase(make_base_iterator(position)));
 	}
