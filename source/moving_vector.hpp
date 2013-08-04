@@ -47,7 +47,7 @@ private:
 			return *this;
 		}
 		iterator_base operator++(int) {
-			auto & self = *this;
+			auto const self = *this;
 			operator++();
 			return self;
 		}
@@ -56,7 +56,7 @@ private:
 			return *this;
 		}
 		iterator_base operator--(int) {
-			auto & self = *this;
+			auto const self = *this;
 			operator--();
 			return self;
 		}
