@@ -22,6 +22,7 @@
 #include <tuple>
 #include <vector>
 #include "moving_vector.hpp"
+#include <iostream>
 
 namespace smart_pointer {
 
@@ -77,7 +78,7 @@ public:
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
 		container(first, last) {
-		std::sort(container.indirect_begin(), container.indirect_end(), indirect_compare{key_comp()});
+		std::sort(container.indirect_begin(), container.indirect_end(), indirect_compare{value_comp()});
 	}
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Allocator const & allocator):
@@ -166,30 +167,36 @@ public:
 	}
 	
 	const_iterator lower_bound(key_type const & key) const {
-		return std::lower_bound(begin(), end(), key, key_value_compare{});
+		return std::lower_bound(begin(), end(), key, key_value_compare{key_comp()});
 	}
 	iterator lower_bound(key_type const & key) {
-		return std::lower_bound(begin(), end(), key, key_value_compare{});
+		return std::lower_bound(begin(), end(), key, key_value_compare{key_comp()});
 	}
 	const_iterator upper_bound(key_type const & key) const {
-		return std::upper_bound(begin(), end(), key, key_value_compare{});
+		return std::upper_bound(begin(), end(), key, key_value_compare{key_comp()});
 	}
 	iterator upper_bound(key_type const & key) {
-		return std::upper_bound(begin(), end(), key, key_value_compare{});
+		return std::upper_bound(begin(), end(), key, key_value_compare{key_comp()});
 	}
 	std::pair<const_iterator, const_iterator> equal_range(key_type const & key) const {
-		return std::equal_range(begin(), end(), key, key_value_compare{});
+		return std::equal_range(begin(), end(), key, key_value_compare{key_comp()});
 	}
 	std::pair<iterator, iterator> equal_range(key_type const & key) {
-		return std::equal_range(begin(), end(), key, key_value_compare{});
+		return std::equal_range(begin(), end(), key, key_value_compare{key_comp()});
 	}
 	const_iterator find(key_type const & key) const {
 		auto const it = lower_bound(key);
-		return *it == key ? it : end();
+		if (it == end()) {
+			return end();
+		}
+		return equals(it->first, key) ? it : end();
 	}
 	iterator find(key_type const & key) {
 		auto const it = lower_bound(key);
-		return *it == key ? it : end();
+		if (it == end()) {
+			return end();
+		}
+		return equals(it->first, key) ? it : end();
 	}
 	
 	size_type count(key_type const & key) const {
@@ -211,7 +218,7 @@ public:
 	mapped_type & operator[](key_type && key) {
 		return emplace(std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::forward_as_tuple()).first->second;
 	}
-
+	
 	// Unlike in std::map, insert / emplace can only provide a time complexity
 	// that matches an insert into the underlying container, which is to say,
 	// linear. An insertion implies shifting all of the elements.
@@ -224,21 +231,21 @@ public:
 	// the key_type, because we have to construct the key to determine whether
 	// we should insert it.
 	template<typename... Args>
-	iterator emplace(Args && ... args) {
+	std::pair<iterator, bool> emplace(Args && ... args) {
 		auto const search_strategy = [&](key_type const & key) {
-			return upper_bound(key);
+			return this->upper_bound(key);
 		};
 		return emplace_search(search_strategy, std::forward<Args>(args)...);
 	}
 	template<typename... Args>
 	iterator emplace_hint(const_iterator hint, Args && ... args) {
 		auto const search_strategy = [&](key_type const & key) {
-			bool const correct_greater = key_comp(key, *hint);
-			bool const correct_less = key_comp(*std::prev(hint), key);
+			bool const correct_greater = this->key_comp(key, *hint);
+			bool const correct_less = this->key_comp(*std::prev(hint), key);
 			bool const correct_hint = correct_greater and correct_less;
-			return correct_hint ? hint : upper_bound(key);
+			return correct_hint ? hint : this->upper_bound(key);
 		};
-		return emplace_search(search_strategy, std::forward<Args>(args)...);
+		return emplace_search(search_strategy, std::forward<Args>(args)...).first;
 	}
 
 	template<typename P>
@@ -258,8 +265,8 @@ public:
 		// merge sort on both ranges, rather than calling std::sort on the
 		// entire container.
 		auto const midpoint = static_cast<typename container_type::indirect_iterator>(container.insert(container.end(), first, last));
-		std::sort(midpoint, container.indirect_end(), indirect_compare{key_comp()});
-		std::inplace_merge(container.indirect_begin(), midpoint, container.indirect_end(), indirect_compare{key_comp()});
+		std::sort(midpoint, container.indirect_end(), indirect_compare{value_comp()});
+		std::inplace_merge(container.indirect_begin(), midpoint, container.indirect_end(), indirect_compare{value_comp()});
 	}
 	void insert(std::initializer_list<value_type> init) {
 		insert(std::begin(init), std::end(init));
@@ -294,6 +301,9 @@ public:
 	}
 
 private:
+	constexpr bool equals(key_type const & lhs, key_type const & rhs) const {
+		return !key_comp()(lhs, rhs) and !key_comp()(rhs, lhs);
+	}
 	class key_value_compare {
 	public:
 		constexpr key_value_compare(key_compare const & compare):
@@ -366,8 +376,9 @@ private:
 	template<typename Search, typename... Args>
 	std::pair<iterator, bool> emplace_key(Search const search, key_type const & key, Args && ... args) {
 		auto const it = search(key);
-		bool const exists = *it == key;
-		return std::make_pair(container.emplace(it, std::forward<Args>(args)...), exists);
+		// If the element is inserted, the size must be one greater
+		auto const prior_size = size();
+		return std::make_pair(container.emplace(it, std::forward<Args>(args)...), size() > prior_size);
 	}
 
 	container_type container;
