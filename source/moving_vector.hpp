@@ -37,10 +37,20 @@ template<typename T, typename ValueType,
 		>::value
 	>...
 >
-ValueType * remove_double_indirection(value_ptr<T> const * ptr) {
+ValueType const * remove_double_indirection(value_ptr<T> const * ptr) {
 	return ptr->get();
 }
-
+template<typename T, typename ValueType,
+	enable_if_t<
+		std::is_same<
+			typename std::remove_const<T>::type,
+			typename std::remove_const<ValueType>::type
+		>::value
+	>...
+>
+ValueType * remove_double_indirection(value_ptr<T> * ptr) {
+	return ptr->get();
+}
 template<typename T, typename ValueType,
 	enable_if_t<
 		std::is_same<
@@ -49,7 +59,18 @@ template<typename T, typename ValueType,
 		>::value
 	>...
 >
-ValueType * remove_double_indirection(value_ptr<T> const * ptr) {
+ValueType const * remove_double_indirection(value_ptr<T> const * ptr) {
+	return ptr;
+}
+template<typename T, typename ValueType,
+	enable_if_t<
+		std::is_same<
+			value_ptr<T>,
+			typename std::remove_const<ValueType>::type
+		>::value
+	>...
+>
+ValueType * remove_double_indirection(value_ptr<T> * ptr) {
 	return ptr;
 }
 

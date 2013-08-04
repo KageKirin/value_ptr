@@ -77,7 +77,7 @@ public:
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
 		container(first, last) {
-		std::sort(container.indirect_begin(), container.indirect_end(), indirect_compare{});
+		std::sort(container.indirect_begin(), container.indirect_end(), indirect_compare{key_comp()});
 	}
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Allocator const & allocator):
@@ -258,8 +258,8 @@ public:
 		// merge sort on both ranges, rather than calling std::sort on the
 		// entire container.
 		auto const midpoint = static_cast<typename container_type::indirect_iterator>(container.insert(container.end(), first, last));
-		std::sort(midpoint, container.indirect_end(), indirect_compare{});
-		std::inplace_merge(container.indirect_begin(), midpoint, container.indirect_end(), indirect_compare{});
+		std::sort(midpoint, container.indirect_end(), indirect_compare{key_comp()});
+		std::inplace_merge(container.indirect_begin(), midpoint, container.indirect_end(), indirect_compare{key_comp()});
 	}
 	void insert(std::initializer_list<value_type> init) {
 		insert(std::begin(init), std::end(init));
@@ -296,18 +296,28 @@ public:
 private:
 	class key_value_compare {
 	public:
+		constexpr key_value_compare(key_compare const & compare):
+			m_compare(compare) {
+		}
 		constexpr bool operator()(key_type const & key, value_type const & value) const {
-			return key_comp()(key, value.first);
+			return m_compare(key, value.first);
 		}
 		constexpr bool operator()(value_type const & value, key_type const & key) const {
-			return key_comp()(value.first, key);
+			return m_compare(value.first, key);
 		}
+	private:
+		key_compare const & m_compare;
 	};
 	class indirect_compare {
 	public:
-		constexpr bool operator()(typename container_type::indirect_iterator::value_type & lhs, typename container_type::indirect_iterator::value_type & rhs) {
-			return value_comp()(*lhs, *rhs);
+		constexpr indirect_compare(value_compare const & compare):
+			m_compare(compare) {
+		}
+		constexpr bool operator()(typename container_type::indirect_iterator::value_type const & lhs, typename container_type::indirect_iterator::value_type const & rhs) const {
+			return m_compare(*lhs, *rhs);
 		}	
+	private:
+		value_compare const & m_compare;
 	};
 
 	// It is safe to bind the reference to the object that is being moved in any

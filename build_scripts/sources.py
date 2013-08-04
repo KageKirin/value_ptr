@@ -46,7 +46,11 @@ def reserve_options(container):
 		return ['NO_RESERVE']
 
 performance_sources = ['performance_test_sequence.cpp']
-performance_tests = [('performance_' + container + '_' + reserve + '_' + size, performance_sources, [container.upper(), reserve, 'ARRAY_SIZE=' + size], []) for container in ['deque', 'list', 'moving_vector', 'vector'] for size in ['1', '10', '40', '50', '60', '100', '200', '500', '1000'] for reserve in reserve_options(container)]
+container_types = ['deque', 'list', 'moving_vector', 'vector']
+# Don't keep compiling all of these other versions that I rarely use
+# array_sizes = ['1', '10', '40', '50', '60', '100', '200', '500', '1000']
+array_sizes = ['100']
+performance_tests = [('performance_' + container + '_' + reserve + '_' + size, performance_sources, [container.upper(), reserve, 'ARRAY_SIZE=' + size], []) for container in container_types for size in array_sizes for reserve in reserve_options(container)]
 
 
 base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests, moving_vector_tests, flat_map_tests] + performance_tests
