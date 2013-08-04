@@ -91,12 +91,6 @@ private:
 		constexpr explicit iterator_base(base_iterator const other) noexcept:
 			it(other) {
 		}
-		constexpr typename container_type::const_iterator make_base_iterator(container_type const & base) const noexcept {
-			return base.begin() + (it - base.begin());
-		}
-		constexpr typename container_type::iterator make_base_mutable_iterator(container_type & base) const noexcept {
-			return base.begin() + (it - base.begin());
-		}
 		base_iterator it;
 	};
 
@@ -248,7 +242,7 @@ public:
 	
 	template<typename... Args>
 	iterator emplace(const_iterator const position, Args && ... args) {
-		return iterator(container.emplace(position.make_base_mutable_iterator(container), make_value<T>(std::forward<Args>(args)...)));
+		return iterator(container.emplace(make_base_iterator(position), make_value<T>(std::forward<Args>(args)...)));
 	}
 	
 	iterator insert(const_iterator const position, T const & value) {
@@ -296,10 +290,10 @@ public:
 	
 	// Too many compilers don't support const_iterator inputs for erase
 	iterator erase(const_iterator const position) {
-		return iterator(container.erase(position.make_base_mutable_iterator(container)));
+		return iterator(container.erase(make_base_iterator(position)));
 	}
 	iterator erase(const_iterator const first, const_iterator const last) {
-		return iterator(container.erase(first.make_base_mutable_iterator(container), last.make_base_mutable_iterator(container)));
+		return iterator(container.erase(make_base_iterator(first), make_base_iterator(last)));
 	}
 	void pop_back() {
 		container.pop_back();
@@ -360,6 +354,12 @@ public:
 		return lhs -= rhs;
 	}
 private:
+	constexpr typename container_type::const_iterator make_base_iterator(const_iterator const it) const {
+		return container.begin() + std::distance(cbegin(), it);
+	}
+	typename container_type::iterator make_base_iterator(const_iterator const it) {
+		return container.begin() + std::distance(cbegin(), it);
+	}
 	container_type container;
 };
 

@@ -38,6 +38,8 @@ moving_vector_tests = ('moving_vector', ['moving_vector.cpp'], [], [])
 flat_map_tests = ('flat_map', ['flat_map.cpp'], [], [])
 
 def reserve_options(container):
+	# reserve doesn't work properly in gcc 4.7
+	return ['NO_RESERVE']
 	if container != 'deque' and container != 'list':
 		return ['RESERVE', 'NO_RESERVE']
 	else:
