@@ -17,6 +17,7 @@
 #ifndef VALUE_PTR_MOVING_VECTOR_HPP_
 #define VALUE_PTR_MOVING_VECTOR_HPP_
 
+#include <type_traits>
 #include <vector>
 #include "value_ptr.hpp"
 
@@ -24,17 +25,45 @@ namespace smart_pointer {
 namespace detail {
 namespace vector {
 
-template<typename T, bool is_const>
+enum class enabler {};
+template<bool condition>
+using enable_if_t = typename std::enable_if<condition, enabler>::type;
+
+template<typename T, typename ValueType,
+	enable_if_t<
+		std::is_same<
+			typename std::remove_const<T>::type,
+			typename std::remove_const<ValueType>::type
+		>::value
+	>...
+>
+ValueType * remove_double_indirection(value_ptr<T> const * ptr) {
+	return ptr->get();
+}
+
+template<typename T, typename ValueType,
+	enable_if_t<
+		std::is_same<
+			value_ptr<T>,
+			typename std::remove_const<ValueType>::type
+		>::value
+	>...
+>
+ValueType * remove_double_indirection(value_ptr<T> const * ptr) {
+	return ptr;
+}
+
+template<typename T, typename ValueType>
 class iterator_base {
 public:
-	using value_type = typename std::conditional<is_const, T const, T>::type;
+	using value_type = ValueType;
 	using difference_type = std::ptrdiff_t;
 	using pointer = value_type *;
 	using reference = value_type &;
 	using iterator_category = std::random_access_iterator_tag;
 	constexpr iterator_base() = default;
 	reference operator*() const {
-		return **it;
+		return *remove_double_indirection<T, ValueType>(it);
 	}
 	pointer operator->() const {
 		return & this->operator*();
@@ -65,26 +94,28 @@ public:
 		it -= offset;
 		return *this;
 	}
-	friend constexpr difference_type operator-(iterator_base const lhs, iterator_base const rhs) {
+	friend constexpr difference_type operator-(iterator_base const & lhs, iterator_base const & rhs) {
 		return lhs.it - rhs.it;
 	}
 	template<typename Integer>
 	reference operator[](Integer const index) {
 		return it[index];
 	}
-	constexpr operator iterator_base<T, true> () noexcept {
-		return iterator_base<T, true>(it);
+
+	constexpr operator iterator_base<T, value_type const>() noexcept {
+		return iterator_base<T, value_type const>(it);
 	}
-	friend constexpr bool operator==(iterator_base const lhs, iterator_base const rhs) noexcept {
+
+	friend constexpr bool operator==(iterator_base const & lhs, iterator_base const & rhs) noexcept {
 		return lhs.it == rhs.it;
 	}
-	friend constexpr bool operator<(iterator_base const lhs, iterator_base const rhs) noexcept {
+	friend constexpr bool operator<(iterator_base const & lhs, iterator_base const & rhs) noexcept {
 		return lhs.it < rhs.it;
 	}
 private:
 	template<typename U, typename Allocator>
 	friend class moving_vector;
-	template<typename U, bool ic>
+	template<typename U, typename VT>
 	friend class iterator_base;
 
 	template<typename Iterator>
@@ -92,37 +123,38 @@ private:
 		it(&*other) {
 	}
 
+	static constexpr bool is_const = std::is_const<value_type>::value;
 	using base_iterator = typename std::conditional<is_const, value_ptr<T> const, value_ptr<T>>::type *;
 	base_iterator it;
 };
 
-template<typename T, bool is_const>
-constexpr bool operator!=(iterator_base<T, is_const> const lhs, iterator_base<T, is_const> const rhs) noexcept {
+template<typename T, typename ValueType>
+constexpr bool operator!=(iterator_base<T, ValueType> const lhs, iterator_base<T, ValueType> const rhs) noexcept {
 	return !(lhs == rhs);
 }
-template<typename T, bool is_const>
-constexpr bool operator>(iterator_base<T, is_const> const lhs, iterator_base<T, is_const> const rhs) noexcept {
+template<typename T, typename ValueType>
+constexpr bool operator>(iterator_base<T, ValueType> const lhs, iterator_base<T, ValueType> const rhs) noexcept {
 	return rhs < lhs;
 }
-template<typename T, bool is_const>
-constexpr bool operator<=(iterator_base<T, is_const> const lhs, iterator_base<T, is_const> const rhs) noexcept {
+template<typename T, typename ValueType>
+constexpr bool operator<=(iterator_base<T, ValueType> const lhs, iterator_base<T, ValueType> const rhs) noexcept {
 	return !(lhs > rhs);
 }
-template<typename T, bool is_const>
-constexpr bool operator>=(iterator_base<T, is_const> const lhs, iterator_base<T, is_const> const rhs) noexcept {
+template<typename T, typename ValueType>
+constexpr bool operator>=(iterator_base<T, ValueType> const lhs, iterator_base<T, ValueType> const rhs) noexcept {
 	return !(lhs < rhs);
 }
 
-template<typename T, bool is_const>
-constexpr iterator_base<T, is_const> operator+(iterator_base<T, is_const> lhs, typename iterator_base<T, is_const>::difference_type const rhs) {
+template<typename T, typename ValueType>
+constexpr iterator_base<T, ValueType> operator+(iterator_base<T, ValueType> lhs, typename iterator_base<T, ValueType>::difference_type const rhs) {
 	return lhs += rhs;
 }
-template<typename T, bool is_const>
-constexpr iterator_base<T, is_const> operator+(typename iterator_base<T, is_const>::difference_type const lhs, iterator_base<T, is_const> rhs) {
+template<typename T, typename ValueType>
+constexpr iterator_base<T, ValueType> operator+(typename iterator_base<T, ValueType>::difference_type const lhs, iterator_base<T, ValueType> rhs) {
 	return rhs += lhs;
 }
-template<typename T, bool is_const>
-constexpr iterator_base<T, is_const> operator-(iterator_base<T, is_const> lhs, typename iterator_base<T, is_const>::difference_type const rhs) {
+template<typename T, typename ValueType>
+constexpr iterator_base<T, ValueType> operator-(iterator_base<T, ValueType> lhs, typename iterator_base<T, ValueType>::difference_type const rhs) {
 	return lhs -= rhs;
 } 
 
@@ -144,8 +176,8 @@ public:
 	using const_pointer = typename std::allocator_traits<Allocator>::const_pointer;
 	using pointer = typename std::allocator_traits<Allocator>::pointer;
 	
-	using const_iterator = detail::vector::iterator_base<T, true>;
-	using iterator = detail::vector::iterator_base<T, false>;
+	using const_iterator = detail::vector::iterator_base<T, T const>;
+	using iterator = detail::vector::iterator_base<T, T>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	
