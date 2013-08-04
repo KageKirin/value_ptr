@@ -23,5 +23,5 @@ using namespace smart_pointer;
 int main(int argc, char ** argv) {
 	stable_flat_map<int, int> empty;
 	stable_flat_map<int, int> container({ {1, 2}, {2, 5}, {2, 3} });
-//	assert(container == stable_flat_map<int, int>{ {1, 2}, {2, 5}, {2, 3} });
+	assert((container == stable_flat_map<int, int>{ {1, 2}, {2, 5}, {2, 3} }));
 }
