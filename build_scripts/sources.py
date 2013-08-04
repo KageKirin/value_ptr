@@ -35,6 +35,7 @@ value_ptr_tests = ('test', ['value_ptr.cpp'], [], [])
 forward_list_tests = ('forward_list', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=false'], [])
 forward_list_std_tests = ('forward_list_std', ['value_forward_list.cpp'], ['USE_SYSTEM_FORWARD_LIST=true'], [])
 moving_vector_tests = ('moving_vector', ['moving_vector.cpp'], [], [])
+flat_map_tests = ('flat_map', ['flat_map.cpp'], [], [])
 
 def reserve_options(container):
 	if container != 'deque' and container != 'list':
@@ -46,5 +47,4 @@ performance_sources = ['performance_test_sequence.cpp']
 performance_tests = [('performance_' + container + '_' + reserve + '_' + size, performance_sources, [container.upper(), reserve, 'ARRAY_SIZE=' + size], []) for container in ['deque', 'list', 'moving_vector', 'vector'] for size in ['1', '10', '40', '50', '60', '100', '200', '500', '1000'] for reserve in reserve_options(container)]
 
 
-
-base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests, moving_vector_tests] + performance_tests
+base_sources = [value_ptr_tests, forward_list_tests, forward_list_std_tests, moving_vector_tests, flat_map_tests] + performance_tests
