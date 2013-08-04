@@ -77,7 +77,7 @@ public:
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
 		container(first, last) {
-		std::sort(container.begin(), container.end());
+		std::sort(container.indirect_begin(), container.indirect_end(), indirect_compare{});
 	}
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Allocator const & allocator):
@@ -257,9 +257,9 @@ public:
 		// sorted, it's probably better to just sort the new elements then do a
 		// merge sort on both ranges, rather than calling std::sort on the
 		// entire container.
-		auto const end_of_sorted_range = container.insert(container.end(), first, last);
-		std::sort(end_of_sorted_range, container.end(), value_comp());
-		std::inplace_merge(container.begin(), end_of_sorted_range, container.end());
+		auto const midpoint = static_cast<typename container_type::indirect_iterator>(container.insert(container.end(), first, last));
+		std::sort(midpoint, container.indirect_end(), indirect_compare{});
+		std::inplace_merge(container.indirect_begin(), midpoint, container.indirect_end(), indirect_compare{});
 	}
 	void insert(std::initializer_list<value_type> init) {
 		insert(std::begin(init), std::end(init));
@@ -302,6 +302,12 @@ private:
 		constexpr bool operator()(value_type const & value, key_type const & key) const {
 			return key_comp()(value.first, key);
 		}
+	};
+	class indirect_compare {
+	public:
+		constexpr bool operator()(typename container_type::indirect_iterator::value_type & lhs, typename container_type::indirect_iterator::value_type & rhs) {
+			return value_comp()(*lhs, *rhs);
+		}	
 	};
 
 	// It is safe to bind the reference to the object that is being moved in any

@@ -105,6 +105,9 @@ public:
 	constexpr operator iterator_base<T, value_type const>() noexcept {
 		return iterator_base<T, value_type const>(it);
 	}
+	constexpr explicit operator iterator_base<T, value_ptr<T>>() {
+		return iterator_base<T, value_ptr<T>>(it);
+	}
 
 	friend constexpr bool operator==(iterator_base const & lhs, iterator_base const & rhs) noexcept {
 		return lhs.it == rhs.it;
