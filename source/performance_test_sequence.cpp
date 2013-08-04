@@ -2,12 +2,11 @@
 #include <array>
 #include <cstdint>
 #include <deque>
-#include <list>
-#include <memory>
-#include <vector>
-#include <random>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <list>
+#include <random>
+#include <vector>
 
 #include <boost/timer.hpp>
 
