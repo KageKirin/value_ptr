@@ -213,15 +213,11 @@ public:
 		}
 	}
 	moving_vector(size_type count, T const & value, Allocator const & allocator = Allocator{}) {
-		for (size_type n = 0; n != count; ++n) {
-			emplace_back(value);
-		}
+		assign(count, value);
 	}
 	template<typename InputIterator>
 	moving_vector(InputIterator first, InputIterator last, Allocator const & allocator = Allocator{}) {
-		for (; first != last; ++first) {
-			emplace_back(*first);
-		}
+		assign(first, last);
 	}
 	moving_vector(moving_vector const & other, Allocator const & allocator):
 		moving_vector(other) {
@@ -234,14 +230,19 @@ public:
 	}
 	
 	void assign(size_type count, T const & value) {
-		*this = moving_vector(count, value);
+		reserve(count);
+		for (size_type n = 0; n != count; ++n) {
+			emplace_back(value);
+		}
 	}
 	template<typename InputIterator>
 	void assign(InputIterator first, InputIterator last) {
-		*this = moving_vector(first, last);
+		for (; first != last; ++first) {
+			emplace_back(*first);
+		}
 	}
 	void assign(std::initializer_list<T> init) {
-		*this = moving_vector(init);
+		assign(std::begin(init), std::end(init));
 	}
 	
 	constexpr const_reference at(size_type position) const {
