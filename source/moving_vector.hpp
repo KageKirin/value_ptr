@@ -19,15 +19,12 @@
 
 #include <type_traits>
 #include <vector>
+#include "enable_if.hpp"
 #include "value_ptr.hpp"
 
 namespace smart_pointer {
 namespace detail {
 namespace vector {
-
-enum class enabler {};
-template<bool condition>
-using enable_if_t = typename std::enable_if<condition, enabler>::type;
 
 template<typename T, typename ValueType,
 	enable_if_t<

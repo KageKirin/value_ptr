@@ -25,11 +25,18 @@ namespace {
 class Final {
 public:
 	constexpr Final() noexcept = default;
+	constexpr Final(int, double, char) noexcept {}
 	Final(Final const & other) = delete;
 	Final(Final && other) = delete;
 	Final & operator=(Final const & other) = delete;
 	Final & operator=(Final && other) = delete;
 };
+
+void test_no_extra_copy_or_move() {
+	stable_flat_map<int, Final> final;
+	final.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple());
+	final.emplace(std::piecewise_construct, std::forward_as_tuple(6), std::forward_as_tuple(5, 2.0, 'c'));
+}
 
 }	// namespace
 
@@ -38,9 +45,6 @@ int main(int argc, char ** argv) {
 	stable_flat_map<int, int> container({ {1, 2}, {2, 5}, {3, 3} });
 	assert((container == stable_flat_map<int, int>{ {1, 2}, {2, 5}, {3, 3} }));
 	container.emplace(std::make_pair(4, 4));
-//	container.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple(3));
+	container.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple(3));
 //	assert(container.at(5) == 3);
-	
-//	stable_flat_map<int, Final> final;
-//	final.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple());
 }

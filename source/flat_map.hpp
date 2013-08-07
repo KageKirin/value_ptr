@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <vector>
+#include "apply_tuple.hpp"
 #include "moving_vector.hpp"
 #include <iostream>
 
@@ -365,10 +366,17 @@ private:
 	std::pair<iterator, bool> emplace_search(Search const search, std::pair<ConvertToKey, ConvertToMapped> const & value) {
 		return emplace_key(search, value.first, value);
 	}
-	template<typename Search, typename... KeyArgs, typename... MappedArgs>
-	std::pair<iterator, bool> emplace_search(Search const search, std::piecewise_construct_t, std::tuple<KeyArgs...> key_tuple, std::tuple<MappedArgs...> mapped_tuple) {
-		key_type key(std::forward<KeyArgs>(std::get<sizeof...(KeyArgs)>(key_tuple))...);
-		return emplace_key(search, key, std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::move(mapped_tuple));
+	class make_key {
+	public:
+		template<typename... Args>
+		constexpr key_type operator()(Args && ... args) {
+			return key_type(std::forward<Args>(args)...);
+		}
+	};
+	template<typename Search, typename KeyTuple, typename MappedTuple>
+	std::pair<iterator, bool> emplace_search(Search const search, std::piecewise_construct_t, KeyTuple && key_tuple, MappedTuple && mapped_tuple) {
+		key_type key(apply(make_key{}, std::forward<KeyTuple>(key_tuple)));
+		return emplace_key(search, key, std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::forward<MappedTuple>(mapped_tuple));
 	}
 
 	// args contains everything needed to construct value_type, including the
