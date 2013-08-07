@@ -46,5 +46,5 @@ int main(int argc, char ** argv) {
 	assert((container == stable_flat_map<int, int>{ {1, 2}, {2, 5}, {3, 3} }));
 	container.emplace(std::make_pair(4, 4));
 	container.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple(3));
-//	assert(container.at(5) == 3);
+	assert(container.at(5) == 3);
 }

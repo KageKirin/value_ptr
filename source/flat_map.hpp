@@ -207,11 +207,17 @@ public:
 	
 	mapped_type const & at(key_type const & key) const {
 		auto const it = find(key);
-		return it != end() ? *it : throw std::out_of_range{"Key not found"};
+		if (it == end()) {
+			throw std::out_of_range{"Key not found"};
+		}
+		return it->second;
 	}
 	mapped_type & at(key_type const & key) {
 		auto const it = find(key);
-		return it != end() ? *it : throw std::out_of_range{"Key not found"};
+		if (it == end()) {
+			throw std::out_of_range{"Key not found"};
+		}
+		return it->second;
 	}
 	mapped_type & operator[](key_type const & key) {
 		return emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple()).first->second;
