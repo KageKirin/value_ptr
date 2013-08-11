@@ -48,6 +48,9 @@ void test() {
 	container.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple(3));
 	assert(container.at(5) == 3);
 	assert(container.size() == 5);
+	container.emplace(typename container_type::value_type(3, 10));
+	assert(container.size() == 5);
+	assert(container.at(3) == 3);
 }
 
 }	// namespace

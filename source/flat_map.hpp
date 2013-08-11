@@ -425,9 +425,15 @@ private:
 	std::pair<iterator, bool> emplace_key(Search const search, key_type const & key, Args && ... args) {
 		auto const it = search(key);
 		// If the element is inserted, the size must be one greater
-		auto const prior_size = size();
-		auto const insertion_point = container.emplace(it, std::forward<Args>(args)...);
-		return std::make_pair(insertion_point, size() > prior_size);
+		constexpr bool allow_duplicates = false;
+		if (!allow_duplicates) {
+			return equals(key, it->first) ?
+				std::make_pair(it, false) :
+				std::make_pair(container.emplace(it, std::forward<Args>(args)...), true);
+		}
+		else {
+			return std::make_pair(it, false);
+		}
 	}
 	
 	class indirect_compare {
