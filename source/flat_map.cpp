@@ -47,6 +47,7 @@ void test() {
 	container.emplace(std::make_pair(4, 4));
 	container.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple(3));
 	assert(container.at(5) == 3);
+	assert(container.size() == 5);
 }
 
 }	// namespace
