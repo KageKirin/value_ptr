@@ -38,13 +38,21 @@ void test_no_extra_copy_or_move() {
 	final.emplace(std::piecewise_construct, std::forward_as_tuple(6), std::forward_as_tuple(5, 2.0, 'c'));
 }
 
-}	// namespace
-
-int main(int argc, char ** argv) {
-	stable_flat_map<int, int> empty;
-	stable_flat_map<int, int> container({ {1, 2}, {2, 5}, {3, 3} });
-	assert((container == stable_flat_map<int, int>{ {1, 2}, {2, 5}, {3, 3} }));
+template<typename container_type>
+void test() {
+	container_type empty;
+	std::initializer_list<typename container_type::value_type> const init = { {1, 2}, {2, 5}, {3, 3} };
+	container_type container(init);
+	assert((container == container_type{init}));
 	container.emplace(std::make_pair(4, 4));
 	container.emplace(std::piecewise_construct, std::forward_as_tuple(5), std::forward_as_tuple(3));
 	assert(container.at(5) == 3);
 }
+
+}	// namespace
+
+int main(int argc, char ** argv) {
+	test_no_extra_copy_or_move();
+	test<stable_flat_map<int, int>>();
+	test<unstable_flat_map<int, int>>();
+ }

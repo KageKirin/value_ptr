@@ -441,6 +441,33 @@ private:
 	container_type container;
 };
 
+// For regular containers, the iterator you need to move elements around is just
+// a regular iterator
+template<typename Container>
+typename std::remove_reference<Container>::type::iterator moving_begin(Container && container) {
+	return std::forward<Container>(container).begin();
+}
+template<typename T, typename Allocator>
+typename moving_vector<T, Allocator>::indirect_iterator moving_begin(moving_vector<T, Allocator> & container) {
+	return container.indirect_begin();
+}
+template<typename T, typename Allocator>
+typename moving_vector<T, Allocator>::indirect_iterator moving_begin(moving_vector<T, Allocator> && container) {
+	return std::move(container).begin();
+}
+template<typename Container>
+typename std::remove_reference<Container>::type::iterator moving_end(Container && container) {
+	return std::forward<Container>(container).end();
+}
+template<typename T, typename Allocator>
+typename moving_vector<T, Allocator>::indirect_iterator moving_end(moving_vector<T, Allocator> & container) {
+	return container.indirect_end();
+}
+template<typename T, typename Allocator>
+typename moving_vector<T, Allocator>::indirect_iterator moving_end(moving_vector<T, Allocator> && container) {
+	return std::move(container).indirect_end();
+}
+
 template<typename T, typename Allocator>
 void swap(moving_vector<T, Allocator> & lhs, moving_vector<T, Allocator> & rhs) noexcept {
 	lhs.swap(rhs);

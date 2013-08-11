@@ -22,17 +22,62 @@
 #include <tuple>
 #include <vector>
 #include "apply_tuple.hpp"
+#include "enable_if.hpp"
 #include "moving_vector.hpp"
-#include <iostream>
 
 namespace smart_pointer {
+namespace detail_flat_map {
+// The exact type of value_type should be considered implementation defined.
+// std::pair<key_type const, mapped_type> does not work if the underlying
+// container is std::vector because insertion into the middle / sorting requires
+// moving the value_type. key_type const does not have a copy or move assignment
+// operator. To get the code to work with a std::vector, we have to sacrifice
+// some compile-time checks. However, we can leave them in place in the case
+// that we are working with a moving_vector.
+//
+// The allocator should never change the value_type of a container, so we just
+// use the default to prevent infinite recursion in our flat_map template
+// parameter.
+template<typename value_type>
+class is_copy_or_move_assignable_helper {
+public:
+	constexpr bool operator()() const {
+		return std::is_move_assignable<value_type>::value or std::is_copy_assignable<value_type>::value;
+	}
+};
+template<typename First, typename Second>
+class is_copy_or_move_assignable_helper<std::pair<First, Second>> {
+public:
+	constexpr bool operator()() const {
+		using value_type = std::pair<First, Second>;
+		return (std::is_move_assignable<typename value_type::first_type>::value or std::is_copy_assignable<typename value_type::first_type>::value)
+			and (std::is_move_assignable<typename value_type::second_type>::value or std::is_copy_assignable<typename value_type::second_type>::value);
+	}
+};
 
-template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, T>>, template<typename, typename> class Container = moving_vector>
+template<typename Key, typename T, template<typename, typename> class Container>
+constexpr bool is_copy_or_move_assignable() {
+	using pair_type = std::pair<Key const, T>;
+	using container_type = Container<pair_type, std::allocator<pair_type>>;
+	using value_ref = decltype(*moving_begin(container_type{}));
+	using value_type = typename std::remove_reference<value_ref>::type;
+	return is_copy_or_move_assignable_helper<value_type>{}();
+}
+
+template<typename Key, typename T, template<typename, typename> class Container>
+using value_type_t = std::pair<
+	typename std::conditional<is_copy_or_move_assignable<Key, T, Container>(), Key const, Key>::type,
+	T
+>;
+
+}	// namespace detail_flat_map
+
+template<typename Key, typename T, typename Compare = std::less<Key>, template<typename, typename> class Container = moving_vector, typename Allocator = std::allocator<detail_flat_map::value_type_t<Key, T, Container>>>
 class flat_map {
 public:
 	using key_type = Key;
 	using mapped_type = T;
-	using value_type = std::pair<key_type const, mapped_type>;
+	using value_type = detail_flat_map::value_type_t<Key, T, Container>;
 	using allocator_type = Allocator;
 private:
 	using container_type = Container<value_type, allocator_type>;
@@ -79,7 +124,7 @@ public:
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
 		container(first, last) {
-		std::sort(container.indirect_begin(), container.indirect_end(), indirect_compare{value_comp()});
+		std::sort(moving_begin(container), moving_end(container), indirect_compare{value_comp()});
 	}
 	template<typename InputIterator>
 	flat_map(InputIterator first, InputIterator last, Allocator const & allocator):
@@ -271,9 +316,9 @@ public:
 		// sorted, it's probably better to just sort the new elements then do a
 		// merge sort on both ranges, rather than calling std::sort on the
 		// entire container.
-		auto const midpoint = static_cast<typename container_type::indirect_iterator>(container.insert(container.end(), first, last));
-		std::sort(midpoint, container.indirect_end(), indirect_compare{value_comp()});
-		std::inplace_merge(container.indirect_begin(), midpoint, container.indirect_end(), indirect_compare{value_comp()});
+		auto const midpoint = static_cast<decltype(moving_end(container))>(container.insert(container.end(), first, last));
+		std::sort(midpoint, moving_end(container), indirect_compare{value_comp()});
+		std::inplace_merge(moving_begin(container), midpoint, moving_end(container), indirect_compare{value_comp()});
 	}
 	void insert(std::initializer_list<value_type> init) {
 		insert(std::begin(init), std::end(init));
@@ -324,17 +369,6 @@ private:
 		}
 	private:
 		key_compare const & m_compare;
-	};
-	class indirect_compare {
-	public:
-		constexpr indirect_compare(value_compare const & compare):
-			m_compare(compare) {
-		}
-		constexpr bool operator()(typename container_type::indirect_iterator::value_type const & lhs, typename container_type::indirect_iterator::value_type const & rhs) const {
-			return m_compare(*lhs, *rhs);
-		}	
-	private:
-		value_compare const & m_compare;
 	};
 
 	// It is safe to bind the reference to the object that is being moved in any
@@ -392,39 +426,59 @@ private:
 		auto const it = search(key);
 		// If the element is inserted, the size must be one greater
 		auto const prior_size = size();
-		return std::make_pair(container.emplace(it, std::forward<Args>(args)...), size() > prior_size);
+		auto const insertion_point = container.emplace(it, std::forward<Args>(args)...);
+		return std::make_pair(insertion_point, size() > prior_size);
 	}
+	
+	class indirect_compare {
+	public:
+		constexpr indirect_compare(value_compare const & compare):
+			m_compare(compare) {
+		}
+		template<typename IndirectionType>
+		constexpr bool operator()(IndirectionType const & lhs, IndirectionType const & rhs) const {
+			return m_compare(*lhs, *rhs);
+		}
+		constexpr bool operator()(value_type const & lhs, value_type const & rhs) const {
+			return m_compare(lhs, rhs);
+		}	
+	private:
+		value_compare const & m_compare;
+	};
+
 
 	container_type container;
 };
 
-template<typename Key, typename T, typename Compare, typename Allocator, template<typename, typename> class Container>
-void swap(flat_map<Key, T, Compare, Allocator, Container> & lhs, flat_map<Key, T, Compare, Allocator, Container> & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
+void swap(flat_map<Key, T, Compare, Container, Allocator> & lhs, flat_map<Key, T, Compare, Container, Allocator> & rhs) noexcept {
 	lhs.swap(rhs);
 }
 
-template<typename Key, typename T, typename Compare, typename Allocator, template<typename, typename> class Container>
-bool operator!=(flat_map<Key, T, Compare, Allocator, Container> const & lhs, flat_map<Key, T, Compare, Allocator, Container> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
+bool operator!=(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
 	return !(lhs == rhs);
 }
-template<typename Key, typename T, typename Compare, typename Allocator, template<typename, typename> class Container>
-bool operator>(flat_map<Key, T, Compare, Allocator, Container> const & lhs, flat_map<Key, T, Compare, Allocator, Container> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
+bool operator>(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
 	return rhs < lhs;
 }
-template<typename Key, typename T, typename Compare, typename Allocator, template<typename, typename> class Container>
-bool operator<=(flat_map<Key, T, Compare, Allocator, Container> const & lhs, flat_map<Key, T, Compare, Allocator, Container> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
+bool operator<=(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
 	return !(lhs > rhs);
 }
-template<typename Key, typename T, typename Compare, typename Allocator, template<typename, typename> class Container>
-bool operator>=(flat_map<Key, T, Compare, Allocator, Container> const & lhs, flat_map<Key, T, Compare, Allocator, Container> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
+bool operator>=(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
 	return !(lhs < rhs);
 }
 
-template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, T>>>
-using unstable_flat_map = flat_map<Key, T, Compare, Allocator, std::vector>;
+
 
 template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, T>>>
-using stable_flat_map = flat_map<Key, T, Compare, Allocator, moving_vector>;
+using unstable_flat_map = flat_map<Key, T, Compare, std::vector, Allocator>;
+
+template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, T>>>
+using stable_flat_map = flat_map<Key, T, Compare, moving_vector, Allocator>;
 
 
 }	// namespace smart_pointer
