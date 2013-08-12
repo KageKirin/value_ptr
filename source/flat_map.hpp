@@ -423,13 +423,16 @@ private:
 	// key. It is provided here as the first argument just to make things easier
 	template<typename Search, typename... Args>
 	std::pair<iterator, bool> emplace_key(Search const search, key_type const & key, Args && ... args) {
+		if (empty()) {
+			container.emplace_back(std::forward<Args>(args)...);
+			return std::make_pair(begin(), true);
+		}
 		auto const it = search(key);
-		// If the element is inserted, the size must be one greater
 		constexpr bool allow_duplicates = false;
 		if (!allow_duplicates) {
-			return equals(key, it->first) ?
-				std::make_pair(it, false) :
-				std::make_pair(container.emplace(it, std::forward<Args>(args)...), true);
+			return (!equals(key, std::prev(it)->first)) ?
+				std::make_pair(container.emplace(it, std::forward<Args>(args)...), true) :
+				std::make_pair(std::prev(it), false);
 		}
 		else {
 			return std::make_pair(it, false);
