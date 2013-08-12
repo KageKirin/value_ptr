@@ -70,14 +70,12 @@ using value_type_t = std::pair<
 	T
 >;
 
-}	// namespace detail_flat_map
-
-template<typename Key, typename T, typename Compare = std::less<Key>, template<typename, typename> class Container = moving_vector, typename Allocator = std::allocator<detail_flat_map::value_type_t<Key, T, Container>>>
-class flat_map {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator, bool allow_duplicates>
+class flat_map_base {
 public:
 	using key_type = Key;
 	using mapped_type = T;
-	using value_type = detail_flat_map::value_type_t<Key, T, Container>;
+	using value_type = value_type_t<Key, T, Container>;
 	using allocator_type = Allocator;
 private:
 	using container_type = Container<value_type, allocator_type>;
@@ -104,7 +102,7 @@ public:
 			return m_compare(lhs.first, rhs.first);
 		}
 	protected:
-		friend class flat_map;
+		friend class flat_map_base;
 		value_compare(key_compare c):
 			m_compare(c) {
 		}
@@ -117,34 +115,34 @@ public:
 		return value_compare(key_comp());
 	}
 	
-	explicit flat_map(Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}) {
+	explicit flat_map_base(Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}) {
 	}
-	explicit flat_map(Allocator const & allocator) {
+	explicit flat_map_base(Allocator const & allocator) {
 	}
 	template<typename InputIterator>
-	flat_map(InputIterator first, InputIterator last, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
+	flat_map_base(InputIterator first, InputIterator last, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
 		container(first, last) {
 		std::sort(moving_begin(container), moving_end(container), indirect_compare{value_comp()});
 	}
 	template<typename InputIterator>
-	flat_map(InputIterator first, InputIterator last, Allocator const & allocator):
-		flat_map(first, last, Compare{}, allocator) {
+	flat_map_base(InputIterator first, InputIterator last, Allocator const & allocator):
+		flat_map_base(first, last, Compare{}, allocator) {
 	}
-	flat_map(flat_map const & other, Allocator const & allocator):
-		flat_map(other) {
+	flat_map_base(flat_map_base const & other, Allocator const & allocator):
+		flat_map_base(other) {
 	}
-	flat_map(flat_map && other, Allocator const & allocator):
-		flat_map(std::move(other)) {
+	flat_map_base(flat_map_base && other, Allocator const & allocator):
+		flat_map_base(std::move(other)) {
 	}
-	flat_map(std::initializer_list<value_type> init, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
-		flat_map(std::begin(init), std::end(init), allocator) {
+	flat_map_base(std::initializer_list<value_type> init, Compare const & compare = Compare{}, Allocator const & allocator = Allocator{}):
+		flat_map_base(std::begin(init), std::end(init), allocator) {
 	}
-	flat_map(std::initializer_list<value_type> init, Allocator const & allocator):
-		flat_map(init, Compare{}, allocator) {
+	flat_map_base(std::initializer_list<value_type> init, Allocator const & allocator):
+		flat_map_base(init, Compare{}, allocator) {
 	}
 	
-	flat_map & operator=(std::initializer_list<value_type> init) {
-		return *this = flat_map(init);
+	flat_map_base & operator=(std::initializer_list<value_type> init) {
+		return *this = flat_map_base(init);
 	}
 	
 	const_iterator begin() const noexcept {
@@ -250,27 +248,6 @@ public:
 		return static_cast<size_type>(std::distance(range.first, range.second));
 	}
 	
-	mapped_type const & at(key_type const & key) const {
-		auto const it = find(key);
-		if (it == end()) {
-			throw std::out_of_range{"Key not found"};
-		}
-		return it->second;
-	}
-	mapped_type & at(key_type const & key) {
-		auto const it = find(key);
-		if (it == end()) {
-			throw std::out_of_range{"Key not found"};
-		}
-		return it->second;
-	}
-	mapped_type & operator[](key_type const & key) {
-		return emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple()).first->second;
-	}
-	mapped_type & operator[](key_type && key) {
-		return emplace(std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::forward_as_tuple()).first->second;
-	}
-	
 	// Unlike in std::map, insert / emplace can only provide a time complexity
 	// that matches an insert into the underlying container, which is to say,
 	// linear. An insertion implies shifting all of the elements.
@@ -341,20 +318,20 @@ public:
 		return std::distance(range.first, range.second);
 	}
 	
-	void swap(flat_map & other) noexcept {
+	void swap(flat_map_base & other) noexcept {
 		container.swap(other.container);
 	}
 
-	friend bool operator==(flat_map const & lhs, flat_map const & rhs) noexcept {
+	friend bool operator==(flat_map_base const & lhs, flat_map_base const & rhs) noexcept {
 		return lhs.container == rhs.container;
 	}
-	friend bool operator<(flat_map const & lhs, flat_map const & rhs) noexcept {
+	friend bool operator<(flat_map_base const & lhs, flat_map_base const & rhs) noexcept {
 		return lhs.container < rhs.container;
 	}
 
 private:
-	constexpr bool equals(key_type const & lhs, key_type const & rhs) const {
-		return !key_comp()(lhs, rhs) and !key_comp()(rhs, lhs);
+	static constexpr bool equals(key_type const & lhs, key_type const & rhs) {
+		return !key_compare{}(lhs, rhs) and !key_compare{}(rhs, lhs);
 	}
 	class key_value_compare {
 	public:
@@ -421,22 +398,36 @@ private:
 
 	// args contains everything needed to construct value_type, including the
 	// key. It is provided here as the first argument just to make things easier
-	template<typename Search, typename... Args>
-	std::pair<iterator, bool> emplace_key(Search const search, key_type const & key, Args && ... args) {
-		if (empty()) {
-			container.emplace_back(std::forward<Args>(args)...);
-			return std::make_pair(begin(), true);
+	template<bool duplicates_are_allowed, typename dummy = void>
+	class checked_emplace_key;
+	template<typename dummy>
+	class checked_emplace_key<true, dummy> {
+	public:
+		using result_type = iterator;
+		template<typename Search, typename... Args>
+		result_type operator()(container_type & container, Search const search, key_type const & key, Args && ... args) {
+			return container.emplace(search(key), std::forward<Args>(args)...);
 		}
-		auto const it = search(key);
-		constexpr bool allow_duplicates = false;
-		if (!allow_duplicates) {
+	};
+	template<typename dummy>
+	class checked_emplace_key<false, dummy> {
+	public:
+		using result_type = std::pair<iterator, bool>;
+		template<typename Search, typename... Args>
+		result_type operator()(container_type & container, Search const search, key_type const & key, Args && ... args) {
+			if (container.empty()) {
+				container.emplace_back(std::forward<Args>(args)...);
+				return std::make_pair(container.begin(), true);
+			}
+			auto const it = search(key);
 			return (!equals(key, std::prev(it)->first)) ?
-				std::make_pair(container.emplace(it, std::forward<Args>(args)...), true) :
-				std::make_pair(std::prev(it), false);
+				result_type(container.emplace(it, std::forward<Args>(args)...), true) :
+				result_type(std::prev(it), false);
 		}
-		else {
-			return std::make_pair(it, false);
-		}
+	};
+	template<typename Search, typename... Args>
+	typename checked_emplace_key<allow_duplicates>::result_type emplace_key(Search const search, key_type const & key, Args && ... args) {
+		return checked_emplace_key<allow_duplicates>{}(container, search, key, std::forward<Args>(args)...);
 	}
 	
 	class indirect_compare {
@@ -460,34 +451,89 @@ private:
 };
 
 template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
-void swap(flat_map<Key, T, Compare, Container, Allocator> & lhs, flat_map<Key, T, Compare, Container, Allocator> & rhs) noexcept {
+class flat_map : public flat_map_base<Key, T, Compare, Container, Allocator, false> {
+private:
+	using base = flat_map_base<Key, T, Compare, Container, Allocator, false>;
+public:
+	using mapped_type = typename base::mapped_type;
+	using key_type = typename base::key_type;
+
+	template<typename ... Args>
+	constexpr flat_map(Args && ... args):
+		base(std::forward<Args>(args)...) {
+	}
+
+	mapped_type const & at(key_type const & key) const {
+		auto const it = find(key);
+		if (it == this->end()) {
+			throw std::out_of_range{"Key not found"};
+		}
+		return it->second;
+	}
+	mapped_type & at(key_type const & key) {
+		auto const it = this->find(key);
+		if (it == this->end()) {
+			throw std::out_of_range{"Key not found"};
+		}
+		return it->second;
+	}
+	mapped_type & operator[](key_type const & key) {
+		return this->emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple()).first->second;
+	}
+	mapped_type & operator[](key_type && key) {
+		return this->emplace(std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::forward_as_tuple()).first->second;
+	}
+};
+
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
+class flat_multimap : public flat_map_base<Key, T, Compare, Container, Allocator, true> {
+private:
+	using base = flat_map_base<Key, T, Compare, Container, Allocator, true>;
+public:
+	template<typename ... Args>
+	constexpr flat_multimap(Args && ... args):
+		base(std::forward<Args>(args)...) {
+	}
+};
+
+}	// namespace detail_flat_map
+
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator, bool allow_duplicates>
+void swap(detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> & lhs, detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> & rhs) noexcept {
 	lhs.swap(rhs);
 }
 
-template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
-bool operator!=(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator, bool allow_duplicates>
+bool operator!=(detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & lhs, detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & rhs) noexcept {
 	return !(lhs == rhs);
 }
-template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
-bool operator>(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator, bool allow_duplicates>
+bool operator>(detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & lhs, detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & rhs) noexcept {
 	return rhs < lhs;
 }
-template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
-bool operator<=(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator, bool allow_duplicates>
+bool operator<=(detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & lhs, detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & rhs) noexcept {
 	return !(lhs > rhs);
 }
-template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
-bool operator>=(flat_map<Key, T, Compare, Container, Allocator> const & lhs, flat_map<Key, T, Compare, Container, Allocator> const & rhs) noexcept {
+template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator, bool allow_duplicates>
+bool operator>=(detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & lhs, detail_flat_map::flat_map_base<Key, T, Compare, Container, Allocator, allow_duplicates> const & rhs) noexcept {
 	return !(lhs < rhs);
 }
 
 
 
-template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, T>>>
-using unstable_flat_map = flat_map<Key, T, Compare, std::vector, Allocator>;
+template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<detail_flat_map::value_type_t<Key, T, std::vector>>>
+using unstable_flat_map = detail_flat_map::flat_map<Key, T, Compare, std::vector, Allocator>;
 
-template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, T>>>
-using stable_flat_map = flat_map<Key, T, Compare, moving_vector, Allocator>;
+template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<detail_flat_map::value_type_t<Key, T, moving_vector>>>
+using stable_flat_map = detail_flat_map::flat_map<Key, T, Compare, moving_vector, Allocator>;
+
+
+template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<detail_flat_map::value_type_t<Key, T, std::vector>>>
+using unstable_flat_multimap = detail_flat_map::flat_multimap<Key, T, Compare, std::vector, Allocator>;
+
+template<typename Key, typename T, typename Compare = std::less<Key>, typename Allocator = std::allocator<detail_flat_map::value_type_t<Key, T, moving_vector>>>
+using stable_flat_multimap = detail_flat_map::flat_multimap<Key, T, Compare, moving_vector, Allocator>;
 
 
 }	// namespace smart_pointer
