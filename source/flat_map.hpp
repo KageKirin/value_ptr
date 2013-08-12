@@ -222,12 +222,6 @@ public:
 	iterator upper_bound(key_type const & key) {
 		return std::upper_bound(begin(), end(), key, key_value_compare{key_comp()});
 	}
-	std::pair<const_iterator, const_iterator> equal_range(key_type const & key) const {
-		return std::equal_range(begin(), end(), key, key_value_compare{key_comp()});
-	}
-	std::pair<iterator, iterator> equal_range(key_type const & key) {
-		return std::equal_range(begin(), end(), key, key_value_compare{key_comp()});
-	}
 	const_iterator find(key_type const & key) const {
 		auto const it = lower_bound(key);
 		if (it == end()) {
@@ -241,11 +235,6 @@ public:
 			return end();
 		}
 		return equals(it->first, key) ? it : end();
-	}
-	
-	size_type count(key_type const & key) const {
-		auto const range = equal_range(key);
-		return static_cast<size_type>(std::distance(range.first, range.second));
 	}
 	
 	// Unlike in std::map, insert / emplace can only provide a time complexity
@@ -309,14 +298,6 @@ public:
 	iterator erase(const_iterator const first, const_iterator const last) {
 		return container.erase(first, last);
 	}
-	size_type erase(key_type const & key) {
-		auto const range = equal_range(key);
-		if (range.first == end()) {
-			return 0;
-		}
-		erase(range.first, range.second);
-		return std::distance(range.first, range.second);
-	}
 	
 	void swap(flat_map_base & other) noexcept {
 		container.swap(other.container);
@@ -329,10 +310,7 @@ public:
 		return lhs.container < rhs.container;
 	}
 
-private:
-	static constexpr bool equals(key_type const & lhs, key_type const & rhs) {
-		return !key_compare{}(lhs, rhs) and !key_compare{}(rhs, lhs);
-	}
+protected:
 	class key_value_compare {
 	public:
 		constexpr key_value_compare(key_compare const & compare):
@@ -347,6 +325,10 @@ private:
 	private:
 		key_compare const & m_compare;
 	};
+private:
+	static constexpr bool equals(key_type const & lhs, key_type const & rhs) {
+		return !key_compare{}(lhs, rhs) and !key_compare{}(rhs, lhs);
+	}
 
 	// It is safe to bind the reference to the object that is being moved in any
 	// of these calls to emplace_key because the call to std::move does not
@@ -457,6 +439,9 @@ private:
 public:
 	using mapped_type = typename base::mapped_type;
 	using key_type = typename base::key_type;
+	using size_type = typename base::size_type;
+	using const_iterator = typename base::const_iterator;
+	using iterator = typename base::iterator;
 
 	template<typename ... Args>
 	constexpr flat_map(Args && ... args):
@@ -483,16 +468,73 @@ public:
 	mapped_type & operator[](key_type && key) {
 		return this->emplace(std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::forward_as_tuple()).first->second;
 	}
+
+	std::pair<const_iterator, const_iterator> equal_range(key_type const & key) const {
+		auto const it = find(key);
+		bool const found = it != this->end();
+		return std::make_pair(it, found ? std::next(it) : it);
+	}
+	std::pair<iterator, iterator> equal_range(key_type const & key) {
+		auto const it = find(key);
+		bool const found = it != this->end();
+		return std::make_pair(it, found ? std::next(it) : it);
+	}
+
+	size_type count(key_type const & key) const {
+		bool const found = this->find(key) != this->end();
+		return found ? 1 : 0;
+	}
+
+	size_type erase(key_type const & key) {
+		auto const it = this->find(key);
+		if (it == this->end()) {
+			return 0;
+		}
+		this->erase(it);
+		return 1;
+	}
 };
 
 template<typename Key, typename T, typename Compare, template<typename, typename> class Container, typename Allocator>
 class flat_multimap : public flat_map_base<Key, T, Compare, Container, Allocator, true> {
 private:
 	using base = flat_map_base<Key, T, Compare, Container, Allocator, true>;
+	using key_value_compare = typename base::key_value_compare;
 public:
+	using key_type = typename base::key_type;
+	using size_type = typename base::size_type;
+	using const_iterator = typename base::const_iterator;
+	using iterator = typename base::iterator;
+
 	template<typename ... Args>
 	constexpr flat_multimap(Args && ... args):
 		base(std::forward<Args>(args)...) {
+	}
+
+	// These implementations work for map or multimap, but I don't expect the
+	// compiler to be able to optimize based on the fact that values in flat_map
+	// are unique, so I have slightly different versions in flat_map.
+
+	std::pair<const_iterator, const_iterator> equal_range(key_type const & key) const {
+		return std::equal_range(this->begin(), this->end(), key, key_value_compare{this->key_comp()});
+	}
+	std::pair<iterator, iterator> equal_range(key_type const & key) {
+		return std::equal_range(this->begin(), this->end(), key, key_value_compare{this->key_comp()});
+	}
+
+	size_type count(key_type const & key) const {
+		auto const range = this->equal_range(key);
+		return static_cast<size_type>(std::distance(range.first, range.second));
+	}
+	
+	size_type erase(key_type const & key) {
+		auto const range = this->equal_range(key);
+		if (range.first == this->end()) {
+			return 0;
+		}
+		auto const distance = std::distance(range.first, range.second);
+		this->erase(range.first, range.second);
+		return distance;
 	}
 };
 
