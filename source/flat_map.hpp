@@ -270,19 +270,31 @@ public:
 	std::pair<iterator, bool> insert(P && value) {
 		return emplace(std::forward<P>(value));
 	}
-	template<typename P>
-	iterator insert(const_iterator const hint, P && value) {
-		return emplace_hint(hint, std::forward<P>(value));
+	// This differs from the signature given on cppreference due to ambiguity
+	// with the iterator range signature. I'm not sure if this workaround
+	// actually fulfills all requirements.
+	iterator insert(const_iterator const hint, value_type const & value) {
+		return emplace_hint(hint, value);
+	}
+	iterator insert(const_iterator const hint, value_type && value) {
+		return emplace_hint(hint, std::move(value));
 	}
 	template<typename InputIterator>
-	void insert(InputIterator first, InputIterator const last) {
+	void insert(InputIterator const first, InputIterator const last) {
 		// Because my underlying container is expected to be contiguous storage,
 		// it's best to do a batch insert and then just sort it all. However,
 		// because I know that the first section of the final range is already
 		// sorted, it's probably better to just sort the new elements then do a
 		// merge sort on both ranges, rather than calling std::sort on the
 		// entire container.
-		auto const midpoint = static_cast<decltype(moving_end(container))>(container.insert(container.end(), first, last));
+		//
+		// Due to a bug in gcc 4.7's std::vector insert implementation, I cannot
+		// simply store the iterator returned by insert (because insert returns
+		// void). Instead, I store the original size and construct a new
+		// iterator.
+		auto const offset = static_cast<typename container_type::difference_type>(container.size());
+		container.insert(container.end(), first, last);
+		auto const midpoint = moving_begin(container) + offset;
 		std::sort(midpoint, moving_end(container), indirect_compare{value_comp()});
 		std::inplace_merge(moving_begin(container), midpoint, moving_end(container), indirect_compare{value_comp()});
 	}
@@ -397,12 +409,8 @@ private:
 		using result_type = std::pair<iterator, bool>;
 		template<typename Search, typename... Args>
 		result_type operator()(container_type & container, Search const search, key_type const & key, Args && ... args) {
-			if (container.empty()) {
-				container.emplace_back(std::forward<Args>(args)...);
-				return std::make_pair(container.begin(), true);
-			}
 			auto const it = search(key);
-			return (!equals(key, std::prev(it)->first)) ?
+			return (it == container.begin() or !equals(key, std::prev(it)->first)) ?
 				result_type(container.emplace(it, std::forward<Args>(args)...), true) :
 				result_type(std::prev(it), false);
 		}

@@ -73,13 +73,25 @@ ValueType * remove_double_indirection(value_ptr<T> * ptr) {
 
 template<typename T, typename ValueType>
 class iterator_base {
+private:
+	using indirection_type = value_ptr<T>;
 public:
 	using value_type = ValueType;
 	using difference_type = std::ptrdiff_t;
 	using pointer = value_type *;
 	using reference = value_type &;
 	using iterator_category = std::random_access_iterator_tag;
-	constexpr iterator_base() = default;
+
+	constexpr iterator_base() noexcept = default;
+	// Convert iterator to const_iterator
+	constexpr operator iterator_base<T, value_type const>() const noexcept {
+		return iterator_base<T, value_type const>(it);
+	}
+	// Convert iterator to indirect_iterator.
+	constexpr explicit operator iterator_base<T, indirection_type>() const noexcept {
+		return iterator_base<T, indirection_type>(it);
+	}
+
 	reference operator*() const {
 		return *remove_double_indirection<T, ValueType>(it);
 	}
@@ -120,32 +132,38 @@ public:
 		return it[index];
 	}
 
-	constexpr operator iterator_base<T, value_type const>() noexcept {
-		return iterator_base<T, value_type const>(it);
-	}
-	constexpr explicit operator iterator_base<T, value_ptr<T>>() {
-		return iterator_base<T, value_ptr<T>>(it);
-	}
-
 	friend constexpr bool operator==(iterator_base const & lhs, iterator_base const & rhs) noexcept {
 		return lhs.it == rhs.it;
 	}
 	friend constexpr bool operator<(iterator_base const & lhs, iterator_base const & rhs) noexcept {
 		return lhs.it < rhs.it;
 	}
+	
 private:
 	template<typename U, typename Allocator>
 	friend class moving_vector;
 	template<typename U, typename VT>
 	friend class iterator_base;
 
-	template<typename Iterator>
-	constexpr explicit iterator_base(Iterator const other) noexcept:
+	static constexpr bool is_const = std::is_const<value_type>::value;
+	using base_iterator = typename std::conditional<is_const, indirection_type const, indirection_type>::type *;
+
+	constexpr explicit iterator_base(base_iterator const other) noexcept:
+		it(other) {
+	}
+	constexpr explicit iterator_base(typename std::vector<indirection_type>::iterator const other):
+		it(&*other) {
+	}
+	constexpr explicit iterator_base(typename std::vector<indirection_type>::const_iterator const other):
 		it(&*other) {
 	}
 
-	static constexpr bool is_const = std::is_const<value_type>::value;
-	using base_iterator = typename std::conditional<is_const, value_ptr<T> const, value_ptr<T>>::type *;
+	// Convert const_iterator to iterator
+	constexpr explicit operator iterator_base<T, T>() const noexcept {
+		using mutable_type = typename std::conditional<std::is_const<T>::value, indirection_type const, indirection_type>::type *;
+		return iterator_base<T, T>(const_cast<mutable_type>(it));
+	}
+
 	base_iterator it;
 };
 
@@ -177,7 +195,7 @@ constexpr iterator_base<T, ValueType> operator+(typename iterator_base<T, ValueT
 template<typename T, typename ValueType>
 constexpr iterator_base<T, ValueType> operator-(iterator_base<T, ValueType> lhs, typename iterator_base<T, ValueType>::difference_type const rhs) {
 	return lhs -= rhs;
-} 
+}
 
 }	// namespace vector
 }	// namespace detail
@@ -200,7 +218,7 @@ public:
 	using const_iterator = detail::vector::iterator_base<T, T const>;
 	using iterator = detail::vector::iterator_base<T, T>;
 	// There is no const_indirect_iterator because there is no way to enforce it
-	using indirect_iterator = detail::vector::iterator_base<T, value_ptr<T>>;
+	using indirect_iterator = detail::vector::iterator_base<T, element_type>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using reverse_indirect_iterator = std::reverse_iterator<indirect_iterator>;
@@ -366,23 +384,18 @@ public:
 		}
 	}
 	template<typename InputIterator>
-	iterator insert(const_iterator const position, InputIterator first, InputIterator const last) {
+	iterator insert(const_iterator position, InputIterator first, InputIterator const last) {
 		if (first == last) {
-			return position;
+			return static_cast<iterator>(position);
 		}
+		auto const offset = position - begin();
 		for ( ; first != last; ++first) {
-			emplace(position, *first);
+			position = emplace(position, *first);
 		}
-		return std::next(position);
+		return begin() + offset + 1;
 	}
 	iterator insert(const_iterator const position, std::initializer_list<T> ilist) {
-		if (ilist.empty()) {
-			return position;
-		}
-		for (auto const & value : ilist) {
-			emplace(position, value);
-		}
-		return std::next(position);
+		return insert(position, std::begin(ilist), std::end(ilist));
 	}
 
 	template<typename... Args>

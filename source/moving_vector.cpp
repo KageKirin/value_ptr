@@ -45,4 +45,11 @@ int main(int argc, char ** argv) {
 	assert(inception.front().size() == 0);
 	inception.front().assign(v.begin(), v.end());
 	assert(inception.front() == v);
+
+	v.emplace(v.begin(), 12);
+	assert(v == moving_vector<int>({12, -3, 2, 5, 6}));
+	v.emplace(v.end(), 12);
+	assert(v == moving_vector<int>({12, -3, 2, 5, 6, 12}));
+	v.emplace(v.begin() + 3, 15);
+	assert(v == moving_vector<int>({12, -3, 2, 15, 5, 6, 12}));
 }
