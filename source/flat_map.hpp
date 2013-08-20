@@ -280,7 +280,7 @@ public:
 		return emplace_hint(hint, std::move(value));
 	}
 	template<typename InputIterator>
-	void insert(InputIterator const first, InputIterator const last) {
+	void insert(InputIterator first, InputIterator const last) {
 		// Because my underlying container is expected to be contiguous storage,
 		// it's best to do a batch insert and then just sort it all. However,
 		// because I know that the first section of the final range is already
@@ -293,7 +293,30 @@ public:
 		// void). Instead, I store the original size and construct a new
 		// iterator.
 		auto const offset = static_cast<typename container_type::difference_type>(container.size());
-		container.insert(container.end(), first, last);
+		// I rely on the optimizer to remove this static check
+		if (allow_duplicates) {
+			container.insert(container.end(), first, last);
+		}
+		else {
+			for (; first != last; ++first) {
+				// I feel bad about finding the position just to throw it away, but
+				// I suspect this is a win vs. having to shift the elements over.
+				auto && value = *first;
+				auto const it = find(value.first);
+				if (it != end()) {
+					container.insert(container.end(), std::forward<decltype(value)>(value));
+				}
+			}
+			#if 0
+			// I considered using this code, but I'm getting strange performance
+			// issues that may just relate to the optimizer, but may be caused
+			// by changing code size. I will have to test this out some more in
+			// a later compiler version.
+			container.insert(container.end(), first, last);
+			auto const remove_position = std::unique(container.begin(), container.end());
+			container.erase(remove_position, container.end());
+			#endif
+		}
 		auto const midpoint = moving_begin(container) + offset;
 		std::sort(midpoint, moving_end(container), indirect_compare{value_comp()});
 		std::inplace_merge(moving_begin(container), midpoint, moving_end(container), indirect_compare{value_comp()});

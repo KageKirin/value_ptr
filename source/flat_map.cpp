@@ -111,9 +111,11 @@ void test_performance(std::size_t const loop_count) {
 	map.insert(additional_batch.begin(), additional_batch.end());
 	auto const inserted_batch = high_resolution_clock::now();
 
+	#if 0
 	for (auto const & value : additional) {
 		map.insert(value);
 	}
+	#endif
 	auto const inserted = high_resolution_clock::now();
 
 	for (auto const & value : additional) {
