@@ -77,8 +77,11 @@ T generate_random_value(std::mt19937 & engine) {
 }
 
 template<typename Key, typename Value>
-std::vector<std::pair<Key, Value>> generate_random_values(std::size_t size, std::mt19937 & engine) {
-	std::vector<std::pair<Key, Value>> source;
+using value_type = std::pair<Key const, Value>;
+
+template<typename Key, typename Value>
+std::vector<value_type<Key, Value>> generate_random_values(std::size_t size, std::mt19937 & engine) {
+	std::vector<value_type<Key, Value>> source;
 	for (std::size_t n = 0; n != size; ++n) {
 		source.emplace_back(generate_random_value<Key>(engine), generate_random_value<Value>(engine));
 	}
@@ -100,7 +103,7 @@ void test_performance(std::size_t const loop_count) {
 	auto const constructed = high_resolution_clock::now();
 
 	for (auto const & value : source) {
-		auto const it = map.find(value.first);
+		auto const volatile it = map.find(value.first);
 		static_cast<void>(it);
 	}
 	auto const found = high_resolution_clock::now();
@@ -122,9 +125,15 @@ void test_performance(std::size_t const loop_count) {
 	auto const copied = high_resolution_clock::now();
 	
 	for (auto const & value : map) {
-		static_cast<void>(value);
+		auto const volatile & thing = value;
 	}
 	auto const iterated = high_resolution_clock::now();
+	for (auto const & value : source) {
+		auto const volatile it = map.find(value.first);
+		static_cast<void>(it);
+	}
+	auto const found_in_extras = high_resolution_clock::now();
+
 	typedef std::chrono::milliseconds unit;
 	std::cout << "Construction time: " << std::chrono::duration_cast<unit>(constructed - start).count() << '\n';
 	std::cout << "Found time: " << std::chrono::duration_cast<unit>(found - constructed).count() << '\n';
@@ -133,6 +142,7 @@ void test_performance(std::size_t const loop_count) {
 	std::cout << "Non-insertion time: " << std::chrono::duration_cast<unit>(not_inserted - inserted).count() << '\n';
 	std::cout << "Copying time: " << std::chrono::duration_cast<unit>(copied - not_inserted).count() << '\n';
 	std::cout << "Iteration time: " << std::chrono::duration_cast<unit>(iterated - copied).count() << '\n';
+	std::cout << "Found time with extra elements: " << std::chrono::duration_cast<unit>(found_in_extras - iterated).count() << '\n';
 }
 
 }	// namespace

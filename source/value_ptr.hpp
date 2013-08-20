@@ -116,14 +116,18 @@ public:
 	}
 
 
+	value_ptr & operator=(T const & other) {
+		get_unique_ptr() = unique_ptr_type(clone(other));
+		return *this;
+	}
 	value_ptr & operator=(value_ptr const & other) {
-		get_unique_ptr() = unique_ptr_type(clone(*other));
+		operator=(*other);
 		get_cloner() = other.get_cloner();
 		return *this;
 	}
 	template<typename U, typename C, typename D>
 	value_ptr & operator=(value_ptr<U, C, D> const & other) {
-		get_unique_ptr() = unique_ptr_type(clone(*other));
+		operator=(*other);
 		get_cloner() = other.get_cloner();
 		return *this;
 	}

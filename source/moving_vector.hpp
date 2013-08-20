@@ -389,9 +389,7 @@ public:
 			return static_cast<iterator>(position);
 		}
 		auto const offset = position - begin();
-		for ( ; first != last; ++first) {
-			position = emplace(position, *first);
-		}
+		container.insert(make_base_iterator(position), first, last);
 		return begin() + offset + 1;
 	}
 	iterator insert(const_iterator const position, std::initializer_list<T> ilist) {
