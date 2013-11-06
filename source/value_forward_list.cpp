@@ -78,6 +78,10 @@ void test_performance(std::size_t const loop_count) {
 }	// namespace
 
 int main(int argc, char ** argv) {
+	static_assert(std::is_same<forward_list<int>::iterator::value_type, int>::value, "iterator has wrong value_type");
+	static_assert(std::is_same<forward_list<int>::const_iterator::value_type, int const>::value, "const_iterator has wrong value_type");
+	static_assert(std::is_same<forward_list<int>::iterator::reference, int &>::value, "iterator has wrong reference");
+	static_assert(std::is_same<forward_list<int>::const_iterator::reference, int const &>::value, "const_iterator has wrong reference");
 	test_semantics();
 	auto const loop_count = (argc == 1) ? 1 : std::stoull(argv[1]);
 	test_performance<std::size_t>(loop_count);
