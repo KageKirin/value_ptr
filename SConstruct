@@ -1,5 +1,5 @@
 # SCons file
-# Copyright (C) 2012 David Stone
+# Copyright (C) 2014 David Stone
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU Affero General Public License as
@@ -85,7 +85,7 @@ def create_program(base):
 		targets = generate_sources(sources, version, defines)
 		executable_name = name + suffix[version]
 		real_env = env[version].Clone(LIBS = libraries, CPPDEFINES=defines)
-		real_env.VariantDir(build_directory(version, defines), 'source', duplicate = 0)
+		real_env.VariantDir(build_directory(version, defines), 'value_ptr', duplicate = 0)
 		real_env.Program(executable_name, targets)
 
 for sources in base_sources:
