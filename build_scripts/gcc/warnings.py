@@ -1,5 +1,5 @@
 # Warnings if building with gcc
-# Copyright (C) 2012 David Stone
+# Copyright (C) 2013 David Stone
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU Affero General Public License as
@@ -32,14 +32,6 @@
 # a while and scan for other warnings, though (such as non-virtual destructors
 # of base classes). This would be more useful as a collection of warnings (like
 # -Wall) instead of a single warning on its own.
-#
-# -Wfloat-equal warns for safe equality comparisons (in particular, comparison
-# with a non-computed value of -1). An example in my code where I use this is
-# that I have a vector of float. I go through this vector, and there are some
-# elements I cannot evaluate yet what they should be, so I set them to -1.0f
-# (since my problem only uses positive numbers, -1 is out of the domain). I
-# later go through and update -1.0f values. It does not easily lend itself to a
-# different method of operation.
 #
 # -Winline is absent because I don't use the inline keyword for optimization
 # purposes, just to define functions inline in headers. I don't care if the
@@ -80,13 +72,36 @@
 # in a vector to apply a set of functions to them (using the range-based for
 # loop).  It is also warning for the constructor of a const array of const
 # std::string (where there is no loop in user code).
-#
-# -Wzero-as-null-pointer-constant triggers for a few boost libraries.
-#
-# -Wuseless-cast is a GCC-4.8-only warning, which I will add when I transition.
 
-warnings = ['-Wall', '-Wextra', '-pedantic', '-Wcast-align', '-Wcast-qual', '-Wctor-dtor-privacy', '-Wdouble-promotion', '-Wformat=2', '-Winit-self', '-Winvalid-pch', '-Wlogical-op', '-Wmissing-declarations', '-Wmissing-include-dirs', '-Wnoexcept', '-Wold-style-cast', '-Woverloaded-virtual', '-Wredundant-decls', '-Wshadow', '-Wsign-conversion', '-Wsign-promo', '-Wstrict-null-sentinel', '-Wtrampolines', '-Wundef', '-Werror', '-Wno-unused-parameter', '-Wno-unused-variable']
-# I have to set -Wstrict-overflow=5 to be a "debug" warning because it conflicts
-# with a boost library when link-time optimization is turned on.
-warnings_debug = ['-Wstrict-overflow=5']
-warnings_optimized = ['-Wdisabled-optimization', '-Wvector-operation-performance']
+warnings = [
+	'-Wall',
+	'-Wextra',
+	'-pedantic',
+	'-Wcast-align',
+	'-Wcast-qual',
+	'-Wctor-dtor-privacy',
+	'-Wdisabled-optimization',
+	'-Wdouble-promotion',
+	'-Wfloat-equal',
+	'-Wformat=2',
+	'-Winit-self',
+	'-Winvalid-pch',
+	'-Wlogical-op',
+	'-Wmissing-declarations',
+	'-Wmissing-include-dirs',
+	'-Wnoexcept',
+	'-Wold-style-cast',
+	'-Woverloaded-virtual',
+	'-Wredundant-decls',
+	'-Wshadow',
+	'-Wsign-conversion',
+	'-Wsign-promo',
+	'-Wstrict-null-sentinel',
+	'-Wstrict-overflow=5',
+	'-Wtrampolines',
+	'-Wundef',
+	'-Wuseless-cast',
+	'-Wvector-operation-performance',
+	'-Wzero-as-null-pointer-constant',
+	'-Werror',
+]

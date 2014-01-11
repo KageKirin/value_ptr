@@ -31,7 +31,7 @@ class default_new {
 public:
 	constexpr default_new() noexcept {}
 	template<typename U>
-	constexpr default_new(default_new<U> const & other) noexcept {}
+	constexpr default_new(default_new<U> const &) noexcept {}
 	T * operator()(T const * const other) const {
 		return new T(*other);
 	}
@@ -41,7 +41,7 @@ class default_new<T[n]> {
 public:
 	constexpr default_new() noexcept {}
 	template<typename U, std::size_t m>
-	constexpr default_new(default_new<U[m]> const & other) noexcept {}
+	constexpr default_new(default_new<U[m]> const &) noexcept {}
 	T * operator()(T const (& other)[n]) const {
 		auto result = new T[n];
 		std::copy(std::begin(other), std::end(other), std::begin(result));

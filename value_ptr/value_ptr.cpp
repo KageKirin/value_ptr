@@ -1,5 +1,5 @@
 // A smart pointer with value semantics
-// Copyright (C) 2013 David Stone
+// Copyright (C) 2014 David Stone
 //
 // This program is free software: you can redistribute it and / or modify
 // it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,6 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "value_ptr.hpp"
-#include "value_forward_list.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -31,17 +30,17 @@ public:
 	Tester() {
 		++default_constructed;
 	}
-	Tester(Tester const & other) {
+	Tester(Tester const &) {
 		++copy_constructed;
 	}
-	Tester(Tester && other) noexcept {
+	Tester(Tester &&) noexcept {
 		++move_constructed;
 	}
-	Tester & operator=(Tester const & other) {
+	Tester & operator=(Tester const &) {
 		++copy_assigned;
 		return *this;
 	}
-	Tester & operator=(Tester && other) noexcept {
+	Tester & operator=(Tester &&) noexcept {
 		++move_assigned;
 		return *this;
 	}

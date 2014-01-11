@@ -1,5 +1,5 @@
 # Determine the correct settings for the compiler being used.
-# Copyright (C) 2012 David Stone
+# Copyright (C) 2013 David Stone
 #
 # This program is free software: you can redistribute it and / or modify
 # it under the terms of the GNU Affero General Public License as
@@ -56,17 +56,17 @@ def is_compiler(compiler):
 if is_compiler('gcc'):
 	from build_scripts.gcc.debug import debug
 	from build_scripts.gcc.std import cxx_std
-	from build_scripts.gcc.warnings import warnings, warnings_debug, warnings_optimized
+	from build_scripts.gcc.warnings import warnings
 	from build_scripts.gcc.optimizations import optimizations, preprocessor_optimizations, linker_optimizations
 elif is_compiler('clang'):
 	from build_scripts.clang.debug import debug
 	from build_scripts.clang.std import cxx_std
-	from build_scripts.clang.warnings import warnings, warnings_debug, warnings_optimized
+	from build_scripts.clang.warnings import warnings
 	from build_scripts.clang.optimizations import optimizations, preprocessor_optimizations, linker_optimizations
 
-cc_flags = { 'default': warnings + debug, 'debug': warnings_debug, 'optimized': optimizations + warnings_optimized }
+cc_flags = { 'default': warnings + debug, 'debug': [], 'optimized': optimizations }
 cxx_flags = { 'default': cxx_std, 'debug': [], 'optimized': [] }
-link_flags = { 'default': warnings + cxx_std, 'debug': [], 'optimized': linker_optimizations + warnings_optimized }
+link_flags = { 'default': warnings + cxx_std, 'debug': [], 'optimized': linker_optimizations }
 cpp_flags = { 'default': [], 'debug': [], 'optimized': preprocessor_optimizations }
 
 flags = { 'cc': cc_flags, 'cxx': cxx_flags, 'link': link_flags, 'cpp': cpp_flags }
