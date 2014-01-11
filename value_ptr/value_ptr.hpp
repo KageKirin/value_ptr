@@ -209,22 +209,6 @@ private:
 
 namespace detail {
 
-template<typename T, typename Cloner, typename Deleter>
-class value_if_general {
-public:
-	typedef value_ptr<T, Cloner, Deleter> object;
-};
-template<typename T, typename Cloner, typename Deleter>
-class value_if_general<T[], Cloner, Deleter> {
-public:
-	typedef value_ptr<T[], Cloner, Deleter> array;
-};
-template<typename T, typename Cloner, typename Deleter, std::size_t n>
-class value_if_general<T[n], Cloner, Deleter> {
-public:
-	typedef void known_bound;
-};
-
 template<typename T>
 class value_if {
 public:
@@ -240,30 +224,20 @@ class value_if<T[n]> {
 public:
 	typedef void known_bound;
 };
+
+template<typename T, typename Cloner, typename Deleter>
+class value_if_general {
+public:
+	typedef value_ptr<T, Cloner, Deleter> object;
+};
+template<typename T, typename Cloner, typename Deleter>
+class value_if_general<T[], Cloner, Deleter> {
+public:
+	typedef value_ptr<T[], Cloner, Deleter> array;
+};
+
 }	// namespace detail
 
-template<typename T, typename Cloner, typename Deleter, typename ... Args>
-typename detail::value_if_general<T, Cloner, Deleter>::object
-make_value_general(Cloner cloner, Deleter deleter, Args && ... args) {
-	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
-	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
-	return value_ptr<T, Cloner, Deleter>(new T(std::forward<Args>(args)...), std::move(cloner), std::move(deleter));
-}
-
-template<typename T, typename Cloner, typename Deleter, typename ... Args>
-typename detail::value_if_general<T, Cloner, Deleter>::array
-make_value_general(std::size_t const n, Cloner cloner, Deleter deleter) {
-	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
-	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
-	typedef typename std::remove_extent<T>::type U;
-	return value_ptr<T, Cloner, Deleter>(new U[n](), std::move(cloner), std::move(deleter));
-}
-
-template<typename T, typename Cloner, typename Deleter, typename ... Args>
-typename detail::value_if_general<T, Cloner, Deleter>::known_bound
-make_value_general(std::size_t const n, Cloner cloner, Deleter deleter) = delete;
-
-// TODO: add support for other allocators / deleters, possibly?
 template<typename T, typename ... Args>
 typename detail::value_if<T>::object make_value(Args && ... args) {
 	return value_ptr<T>(new T(std::forward<Args>(args)...));
@@ -276,7 +250,29 @@ typename detail::value_if<T>::array make_value(std::size_t const n) {
 }
 
 template<typename T, typename ... Args>
-typename detail::value_if<T>::known_bound make_value(std::size_t const n) = delete;
+typename detail::value_if<T>::known_bound make_value(Args && ... args) = delete;
+
+
+template<typename T, typename Cloner, typename Deleter, typename ... Args>
+typename detail::value_if_general<T, Cloner, Deleter>::object
+make_value_general(Cloner && cloner, Deleter && deleter, Args && ... args) {
+	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
+	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
+	return value_ptr<T, Cloner, Deleter>(new T(std::forward<Args>(args)...), std::forward<Cloner>(cloner), std::forward<Deleter>(deleter));
+}
+
+template<typename T, typename Cloner, typename Deleter, typename ... Args>
+typename detail::value_if_general<T, Cloner, Deleter>::array
+make_value_general(std::size_t const n, Cloner && cloner, Deleter && deleter) {
+	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
+	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
+	typedef typename std::remove_extent<T>::type U;
+	return value_ptr<T, Cloner, Deleter>(new U[n](), std::forward<Cloner>(cloner), std::forward<Deleter>(deleter));
+}
+
+template<typename T, typename ... Args>
+typename detail::value_if<T>::known_bound make_value_general(Args && ... args) = delete;
+
 
 template<typename T, typename Cloner, typename Deleter>
 void swap(value_ptr<T, Cloner, Deleter> & lhs, value_ptr<T, Cloner, Deleter> & rhs) noexcept {
