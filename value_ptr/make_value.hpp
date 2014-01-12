@@ -66,7 +66,7 @@ typename detail::value_if<T>::array make_value(std::size_t const n) {
 }
 
 template<typename T, typename ... Args>
-typename detail::value_if<T>::known_bound make_value(Args && ... args) = delete;
+typename detail::value_if<T>::known_bound make_value(Args && ...) = delete;
 
 
 template<typename T, typename Cloner, typename Deleter, typename ... Args>
@@ -87,7 +87,7 @@ make_value_general(std::size_t const n, Cloner && cloner, Deleter && deleter) {
 }
 
 template<typename T, typename ... Args>
-typename detail::value_if<T>::known_bound make_value_general(Args && ... args) = delete;
+typename detail::value_if<T>::known_bound make_value_general(Args && ...) = delete;
 
 }	// namespace smart_pointer
 #endif	// VALUE_PTR_MAKE_VALUE_HPP_

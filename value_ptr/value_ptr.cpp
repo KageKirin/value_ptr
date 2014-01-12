@@ -36,14 +36,8 @@ public:
 	Tester(Tester &&) noexcept {
 		++move_constructed;
 	}
-	Tester & operator=(Tester const &) {
-		++copy_assigned;
-		return *this;
-	}
-	Tester & operator=(Tester &&) noexcept {
-		++move_assigned;
-		return *this;
-	}
+	Tester & operator=(Tester const &) = delete;
+	Tester & operator=(Tester &&) noexcept = delete;
 	~Tester() noexcept {
 		++destructed;
 	}
@@ -55,12 +49,12 @@ public:
 	static std::size_t destructed;
 };
 
-std::size_t Tester::default_constructed;
-std::size_t Tester::copy_constructed;
-std::size_t Tester::move_constructed;
-std::size_t Tester::copy_assigned;
-std::size_t Tester::move_assigned;
-std::size_t Tester::destructed;
+std::size_t Tester::default_constructed = 0;
+std::size_t Tester::copy_constructed = 0;
+std::size_t Tester::move_constructed = 0;
+std::size_t Tester::copy_assigned = 0;
+std::size_t Tester::move_assigned = 0;
+std::size_t Tester::destructed = 0;
 
 static_assert(sizeof(value_ptr<Tester>) == sizeof(Tester *), "value_ptr wrong size!");
 static_assert(sizeof(value_ptr<Tester[]>) == sizeof(Tester *), "value_ptr array wrong size!");
@@ -79,7 +73,7 @@ public:
 	void operator()() const {
 		CHECK_EQUALS(T::default_constructed, default_constructed);
 		CHECK_EQUALS(T::copy_constructed, copy_constructed);
-		CHECK_EQUALS(T::move_constructed, 0);
+		CHECK_EQUALS(T::move_constructed, move_constructed);
 		CHECK_EQUALS(T::copy_assigned, 0);
 		CHECK_EQUALS(T::move_assigned, 0);
 		CHECK_EQUALS(T::destructed, destructed);
@@ -90,12 +84,16 @@ public:
 	void copy_construct() {
 		++copy_constructed;
 	}
+	void move_construct() {
+		++move_constructed;
+	}
 	void destruct() {
 		++destructed;
 	}
 private:
 	std::size_t default_constructed = 0;
 	std::size_t copy_constructed = 0;
+	std::size_t move_constructed = 0;
 	std::size_t destructed = 0;
 };
 
@@ -142,6 +140,11 @@ void test_constructors(Verify<Tester> & verify) {
 		verify.default_construct();
 	}
 	verify();
+	value_ptr<Tester> moved_to(std::move(t));
+	verify.move_construct();
+	verify();
+	
+	verify.destruct();	// moved_to
 	verify.destruct();	// t
 	verify.destruct();	// p
 	for (std::size_t n = 0; n != v.size(); ++n) {
@@ -221,4 +224,5 @@ int main() {
 	verify();
 	test_assignment(verify);
 	test_semantics();
+	test_virtual_cloning();
 }
