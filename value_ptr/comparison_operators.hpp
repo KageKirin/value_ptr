@@ -36,9 +36,9 @@ bool operator!=(value_ptr<T1, C1, D1> const & lhs, value_ptr<T2, C2, D2> const &
 
 template<typename T1, typename C1, typename D1, typename T2, typename C2, typename D2>
 bool operator<(value_ptr<T1, C1, D1> const & lhs, value_ptr<T2, C2, D2> const & rhs) {
-	typedef typename value_ptr<T1, C1, D1>::pointer P1;
-	typedef typename value_ptr<T2, C2, D2>::pointer P2;
-	typedef typename std::common_type<P1, P2>::type CT;
+	using P1 = typename value_ptr<T1, C1, D1>::pointer;
+	using P2 = typename value_ptr<T2, C2, D2>::pointer;
+	using CT = typename std::common_type<P1, P2>::type;
 	return std::less<CT>()(lhs.get(), rhs.get());
 }
 

@@ -39,19 +39,19 @@ class empty_class {
 template<typename T, typename Cloner = default_new<T>, typename Deleter = std::default_delete<T>>
 class value_ptr {
 private:
-	typedef typename std::unique_ptr<T, Deleter> unique_ptr_type;
-	typedef std::tuple<unique_ptr_type, Cloner, detail::empty_class> base_type;
+	using unique_ptr_type = std::unique_ptr<T, Deleter>;
+	using base_type = std::tuple<unique_ptr_type, Cloner, detail::empty_class>;
 public:
-	typedef Cloner cloner_type;
-	typedef typename unique_ptr_type::deleter_type deleter_type;
+	using cloner_type = Cloner;
+	using deleter_type = typename unique_ptr_type::deleter_type;
 private:
-	typedef typename std::conditional<std::is_reference<cloner_type>::value, cloner_type, cloner_type const &>::type cloner_lvalue_reference;
-	typedef typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type deleter_lvalue_reference;
-	typedef typename std::remove_reference<cloner_type>::type && cloner_rvalue_reference;
-	typedef typename std::remove_reference<deleter_type>::type && deleter_rvalue_reference;
+	using cloner_lvalue_reference = typename std::conditional<std::is_reference<cloner_type>::value, cloner_type, cloner_type const &>::type;
+	using deleter_lvalue_reference = typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type;
+	using cloner_rvalue_reference = typename std::remove_reference<cloner_type>::type &&;
+	using deleter_rvalue_reference = typename std::remove_reference<deleter_type>::type &&;
 public:
-	typedef typename unique_ptr_type::pointer pointer;
-	typedef typename unique_ptr_type::element_type element_type;
+	using pointer = typename unique_ptr_type::pointer;
+	using element_type = typename unique_ptr_type::element_type;
 	
 	constexpr value_ptr() noexcept {}
 	constexpr value_ptr(std::nullptr_t) noexcept:
