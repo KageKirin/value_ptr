@@ -123,6 +123,9 @@ public:
 	}
 
 
+	// I am not sure if I should keep these around. They have the surprising
+	// consequence of constructing the new value and destructing the old value,
+	// rather than assigning.
 	value_ptr & operator=(T const & other) {
 		get_unique_ptr() = unique_ptr_type(clone(other));
 		return *this;
@@ -135,6 +138,7 @@ public:
 		get_unique_ptr() = unique_ptr_type(clone(std::move(other)));
 		return *this;
 	}
+
 	value_ptr & operator=(value_ptr const & other) {
 		operator=(*other);
 		get_cloner() = other.get_cloner();
