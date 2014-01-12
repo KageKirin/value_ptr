@@ -55,10 +55,10 @@ public:
 	
 	constexpr value_ptr() noexcept {}
 	constexpr value_ptr(std::nullptr_t) noexcept:
-		base(nullptr, cloner_type(), detail::empty_class()) {
+		base(nullptr, cloner_type{}, detail::empty_class()) {
 	}
 	explicit value_ptr(pointer p) noexcept:
-		base(unique_ptr_type(p), cloner_type(), detail::empty_class()) {
+		base(unique_ptr_type(p), cloner_type{}, detail::empty_class()) {
 	}
 
 	value_ptr(pointer p, cloner_lvalue_reference cloner) noexcept:
@@ -69,10 +69,10 @@ public:
 	}
 
 	value_ptr(pointer p, deleter_lvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, deleter), cloner_type(), detail::empty_class()) {
+		base(unique_ptr_type(p, deleter), cloner_type{}, detail::empty_class()) {
 	}
 	value_ptr(pointer p, deleter_rvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, std::move(deleter)), cloner_type(), detail::empty_class()) {
+		base(unique_ptr_type(p, std::move(deleter)), cloner_type{}, detail::empty_class()) {
 	}
 
 	value_ptr(pointer p, cloner_lvalue_reference cloner, deleter_lvalue_reference deleter) noexcept:
@@ -96,14 +96,14 @@ public:
 		base(clone(*other), other.get_cloner(), detail::empty_class()) {
 	}
 	explicit value_ptr(T const & other):
-		base(clone(other), cloner_type(), detail::empty_class()) {
+		base(clone(other), cloner_type{}, detail::empty_class()) {
 	}
 	// Allow oddball classes that have a modifying copy constructor
 	explicit value_ptr(T & other):
-		base(clone(other), cloner_type(), detail::empty_class()) {
+		base(clone(other), cloner_type{}, detail::empty_class()) {
 	}
 	explicit value_ptr(T && other):
-		base(clone(std::move(other)), cloner_type(), detail::empty_class()) {
+		base(clone(std::move(other)), cloner_type{}, detail::empty_class()) {
 	}
 
 	value_ptr(value_ptr && other) noexcept:
@@ -115,11 +115,11 @@ public:
 	}
 	template<typename U, typename D>
 	value_ptr(std::unique_ptr<U, D> && other) noexcept:
-		base(std::move(other), cloner_type(), detail::empty_class()) {
+		base(std::move(other), cloner_type{}, detail::empty_class()) {
 	}
 	template<typename U>
 	value_ptr(std::auto_ptr<U> && other) noexcept:
-		base(std::move(other), cloner_type(), detail::empty_class()) {
+		base(std::move(other), cloner_type{}, detail::empty_class()) {
 	}
 
 
@@ -158,7 +158,7 @@ public:
 	template<typename U, typename D>
 	value_ptr & operator=(std::unique_ptr<U, D> && other) noexcept {
 		get_unique_ptr() = (std::move(other));
-		get_cloner() = cloner_type();
+		get_cloner() = cloner_type{};
 		return *this;
 	}
 	value_ptr & operator=(std::nullptr_t) noexcept {
@@ -171,7 +171,7 @@ public:
 	}
 	void reset(pointer ptr = pointer()) noexcept {
 		get_unique_ptr().reset(ptr);
-		get_cloner() = cloner_type();
+		get_cloner() = cloner_type{};
 	}
 	void swap(value_ptr & other) noexcept {
 		base.swap(other.base);
