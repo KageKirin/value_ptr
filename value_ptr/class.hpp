@@ -93,7 +93,7 @@ public:
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
-		base(clone(*other), other.get_cloner(), detail::empty_class()) {
+		base(other != nullptr ? clone(*other) : nullptr, other.get_cloner(), detail::empty_class()) {
 	}
 	explicit value_ptr(T const & other):
 		base(clone(other), cloner_type{}, detail::empty_class()) {
