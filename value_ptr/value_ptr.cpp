@@ -198,6 +198,21 @@ void test_semantics() {
 	});
 }
 
+class VirtualBase {
+public:
+	virtual ~VirtualBase() = default;
+};
+
+class VirtualDerived : public VirtualBase {
+};
+
+void test_virtual_cloning() {
+	value_ptr<VirtualBase> ptr(new VirtualDerived{});
+	static_cast<void>(ptr);
+//	value_ptr<VirtualBase> other(ptr);
+//	static_cast<void>(other);
+}
+
 }	// namespace
 
 int main() {

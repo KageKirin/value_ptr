@@ -21,20 +21,36 @@
 #ifndef DEFAULT_NEW_HPP_
 #define DEFAULT_NEW_HPP_
 
+#include "enable_if.hpp"
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 
 namespace smart_pointer {
 
 template<typename T>
 class default_new {
 public:
-	static_assert(!std::is_polymorphic<T>::value, "You must either specialize default_new to properly clone your polymorphic type or provide a custom cloner.");
 	constexpr default_new() noexcept {}
 	template<typename U>
 	constexpr default_new(default_new<U> const &) noexcept {}
-	T * operator()(T const & other) const {
-		return new T(other);
+	// This is a template to delay instantiation of this function until the
+	// point of use. The static_assert is only triggered if you actually try the
+	// operation that causes an error (cloning a polymorphic class), rather than
+	// when you instantiate the value_ptr. This also allows perfect forwarding.
+	template<
+		typename U,
+		enable_if_t<
+			std::is_same<typename std::decay<T>::type, typename std::decay<U>::type>::value and
+			!std::is_array<U>::value
+		> = enabler_dummy
+	>
+	T * operator()(U && other) const {
+		static_assert(
+			!std::is_polymorphic<T>::value,
+			"You must either specialize default_new to properly clone your polymorphic type or provide a custom cloner."
+		);
+		return new T(std::forward<U>(other));
 	}
 };
 template<typename T, std::size_t n>

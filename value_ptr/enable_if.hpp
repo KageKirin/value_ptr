@@ -1,6 +1,6 @@
 // A slight simplification of std::enable_if, modified from
 // http://flamingdangerzone.com/cxx11/2012/06/01/almost-static-if.html
-// Copyright (C) 2013 David Stone
+// Copyright (C) 2014 David Stone
 //
 // This program is free software: you can redistribute it and / or modify
 // it under the terms of the GNU Affero General Public License as
@@ -31,9 +31,17 @@ void f() {
 
 #endif
 
+namespace detail {
+
 enum class enabler {};
+
+}	// namespace detail
+
+// This is used a workaround for clang.
+constexpr detail::enabler enabler_dummy{};
+
 template<bool condition>
-using enable_if_t = typename std::enable_if<condition, enabler>::type;
+using enable_if_t = typename std::enable_if<condition, detail::enabler>::type;
 
 }	// namespace smart_pointer
 #endif	// VALUE_PTR_FLAT_MAP_HPP_
