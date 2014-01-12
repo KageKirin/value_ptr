@@ -128,25 +128,28 @@ public:
 	// rather than assigning.
 	value_ptr & operator=(T const & other) {
 		get_unique_ptr() = unique_ptr_type(clone(other));
+		get_cloner() = cloner_type{};
 		return *this;
 	}
 	value_ptr & operator=(T & other) {
 		get_unique_ptr() = unique_ptr_type(clone(other));
+		get_cloner() = cloner_type{};
 		return *this;
 	}
 	value_ptr & operator=(T && other) {
 		get_unique_ptr() = unique_ptr_type(clone(std::move(other)));
+		get_cloner() = cloner_type{};
 		return *this;
 	}
 
 	value_ptr & operator=(value_ptr const & other) {
-		operator=(*other);
+		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
 		get_cloner() = other.get_cloner();
 		return *this;
 	}
 	template<typename U, typename C, typename D>
 	value_ptr & operator=(value_ptr<U, C, D> const & other) {
-		operator=(*other);
+		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
 		get_cloner() = other.get_cloner();
 		return *this;
 	}
