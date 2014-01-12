@@ -1,5 +1,5 @@
 // Default way to create a new object
-// Copyright (C) 2013 David Stone
+// Copyright (C) 2014 David Stone
 //
 // This program is free software: you can redistribute it and / or modify
 // it under the terms of the GNU Affero General Public License as
@@ -29,6 +29,7 @@ namespace smart_pointer {
 template<typename T>
 class default_new {
 public:
+	static_assert(!std::is_polymorphic<T>::value, "You must either specialize default_new to properly clone your polymorphic type or provide a custom cloner.");
 	constexpr default_new() noexcept {}
 	template<typename U>
 	constexpr default_new(default_new<U> const &) noexcept {}
