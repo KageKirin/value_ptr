@@ -98,6 +98,13 @@ public:
 	explicit value_ptr(T const & other):
 		base(clone(other), cloner_type(), detail::empty_class()) {
 	}
+	// Allow oddball classes that have a modifying copy constructor
+	explicit value_ptr(T & other):
+		base(clone(other), cloner_type(), detail::empty_class()) {
+	}
+	explicit value_ptr(T && other):
+		base(clone(std::move(other)), cloner_type(), detail::empty_class()) {
+	}
 
 	value_ptr(value_ptr && other) noexcept:
 		base(std::move(other.base)) {
@@ -118,6 +125,14 @@ public:
 
 	value_ptr & operator=(T const & other) {
 		get_unique_ptr() = unique_ptr_type(clone(other));
+		return *this;
+	}
+	value_ptr & operator=(T & other) {
+		get_unique_ptr() = unique_ptr_type(clone(other));
+		return *this;
+	}
+	value_ptr & operator=(T && other) {
+		get_unique_ptr() = unique_ptr_type(clone(std::move(other)));
 		return *this;
 	}
 	value_ptr & operator=(value_ptr const & other) {
@@ -198,8 +213,9 @@ private:
 	unique_ptr_type & get_unique_ptr() noexcept {
 		return std::get<0>(base);
 	}
-	unique_ptr_type clone(element_type const & other) const {
-		return unique_ptr_type(get_cloner()(other));
+	template<typename U>
+	unique_ptr_type clone(U && other) const {
+		return unique_ptr_type(get_cloner()(std::forward<U>(other)));
 	}
 	base_type base;
 
