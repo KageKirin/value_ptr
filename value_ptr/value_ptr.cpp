@@ -207,13 +207,3 @@ int main() {
 	test_assignment(verify);
 	test_semantics();
 }
-
-
-
-
-
-
-
-
-
-

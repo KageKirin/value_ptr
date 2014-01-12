@@ -25,7 +25,7 @@ class Program:
 		self.defines = defines
 		self.libraries = libraries
 
-test = Program('test', ['value_ptr.cpp'])
+test = Program('test', ['class.cpp', 'comparison_operators.cpp', 'make_value.cpp', 'value_ptr.cpp'])
 
 source_directory = 'value_ptr'
 
