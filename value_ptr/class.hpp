@@ -199,7 +199,7 @@ private:
 		return std::get<0>(base);
 	}
 	unique_ptr_type clone(element_type const & other) const {
-		return unique_ptr_type(get_cloner()(&other));
+		return unique_ptr_type(get_cloner()(other));
 	}
 	base_type base;
 

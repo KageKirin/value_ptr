@@ -33,8 +33,8 @@ public:
 	constexpr default_new() noexcept {}
 	template<typename U>
 	constexpr default_new(default_new<U> const &) noexcept {}
-	T * operator()(T const * const other) const {
-		return new T(*other);
+	T * operator()(T const & other) const {
+		return new T(other);
 	}
 };
 template<typename T, std::size_t n>
