@@ -2,13 +2,6 @@ syntax: regexp
 
 ^test$
 ^test-debug$
-^forward_list$
-^forward_list-debug$
-^forward_list_std$
-^forward_list_std-debug$
-^moving_vector$
-^moving_vector-debug
-^performance_
 
 syntax: glob
 
