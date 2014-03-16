@@ -14,21 +14,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-def prepend_dir(directory, sources):
-	"""Remove redundant specification of a directory for multiple sources"""
-	return map(lambda source: directory + '/' + source, sources)
+from program import Program
 
-class Program:
-	def __init__(self, name, sources, defines = [], libraries = []):
-		self.name = name
-		self.sources = sources
-		self.defines = defines
-		self.libraries = libraries
-
-test = Program('test', ['class.cpp', 'comparison_operators.cpp', 'default_new.cpp', 'make_value.cpp', 'value_ptr.cpp'])
+sources = [
+	'class.cpp',
+	'comparison_operators.cpp',
+	'default_new.cpp',
+	'make_value.cpp',
+	'value_ptr.cpp',
+]
 
 source_directory = 'value_ptr'
 
-programs = [test]
-
-include_directories = []
+programs = [Program('test', sources)]
