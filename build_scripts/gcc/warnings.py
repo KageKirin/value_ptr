@@ -100,7 +100,7 @@ warnings = [
 	'-Wstrict-overflow=5',
 	'-Wtrampolines',
 	'-Wundef',
-	'-Wuseless-cast',
+#	'-Wuseless-cast',
 	'-Wvector-operation-performance',
 	'-Wzero-as-null-pointer-constant',
 	'-Werror',
