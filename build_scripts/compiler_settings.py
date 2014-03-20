@@ -30,12 +30,12 @@ def extract_info(name, command):
 	installed at 'path/g++', then the user must specify both the real name of
 	the compiler and the path.
 	"""
-	if name == None and command != None:
-		name = os.path.basename(command)
-	elif command == None and name != None:
-		command = name
-	else:
-		name = DefaultEnvironment()['CXX']
+	if name == None:
+		if command == None:
+			name = DefaultEnvironment()['CXX']
+		else:
+			name = os.path.basename(command)
+	if command == None:
 		command = name
 	return (name, command)
 
