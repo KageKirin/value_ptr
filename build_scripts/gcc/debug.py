@@ -15,16 +15,20 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 class debug:
-	__generate_debug_symbols = '-g'
-	compile_flags = [
-		__generate_debug_symbols,
+	__generate_debug_symbols = ['-g']
+	__sanitize_options = [
+		'-fsanitize=address',
+#		'-fsanitize=thread',
+#		'-fsanitize=undefined',
 	]
-	compile_flags_release = [
-		__generate_debug_symbols,
+	__sanitize_link_options = __sanitize_options + [
+		'-static-libasan',
+#		'-static-libtsan',
+#		'-static-libunsan',
 	]
+	compile_flags = __generate_debug_symbols + __sanitize_options
+	compile_flags_release = __generate_debug_symbols + __sanitize_options
 
-	link_flags = [
-	]
-	link_flags_release = [
-	]
+	link_flags = __sanitize_link_options
+	link_flags_release = __sanitize_link_options
 
