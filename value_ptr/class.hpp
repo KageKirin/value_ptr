@@ -117,10 +117,6 @@ public:
 	value_ptr(std::unique_ptr<U, D> && other) noexcept:
 		base(std::move(other), cloner_type{}, detail::empty_class()) {
 	}
-	template<typename U>
-	value_ptr(std::auto_ptr<U> && other) noexcept:
-		base(std::move(other), cloner_type{}, detail::empty_class()) {
-	}
 
 
 	// I am not sure if I should keep these around. They have the surprising
