@@ -172,9 +172,6 @@ public:
 		get_unique_ptr().reset(ptr);
 		get_cloner() = cloner_type{};
 	}
-	void swap(value_ptr & other) noexcept {
-		base.swap(other.base);
-	}
 	
 	pointer get() const noexcept {
 		return get_unique_ptr().get();
@@ -226,11 +223,6 @@ private:
 	friend class value_ptr;
 };
 
-
-template<typename T, typename Cloner, typename Deleter>
-void swap(value_ptr<T, Cloner, Deleter> & lhs, value_ptr<T, Cloner, Deleter> & rhs) noexcept {
-	lhs.swap(rhs);
-}
 
 }	// namespace smart_pointer
 #endif	// VALUE_PTR_CLASS_HPP_
