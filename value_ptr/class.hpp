@@ -95,16 +95,6 @@ public:
 	value_ptr(value_ptr<U, C, D> const & other):
 		base(other != nullptr ? clone(*other) : nullptr, other.get_cloner(), detail::empty_class()) {
 	}
-	explicit value_ptr(T const & other):
-		base(clone(other), cloner_type{}, detail::empty_class()) {
-	}
-	// Allow oddball classes that have a modifying copy constructor
-	explicit value_ptr(T & other):
-		base(clone(other), cloner_type{}, detail::empty_class()) {
-	}
-	explicit value_ptr(T && other):
-		base(clone(std::move(other)), cloner_type{}, detail::empty_class()) {
-	}
 
 	value_ptr(value_ptr && other) noexcept:
 		base(std::move(other.base)) {
@@ -118,25 +108,6 @@ public:
 		base(std::move(other), cloner_type{}, detail::empty_class()) {
 	}
 
-
-	// I am not sure if I should keep these around. They have the surprising
-	// consequence of constructing the new value and destructing the old value,
-	// rather than assigning.
-	value_ptr & operator=(T const & other) {
-		get_unique_ptr() = unique_ptr_type(clone(other));
-		get_cloner() = cloner_type{};
-		return *this;
-	}
-	value_ptr & operator=(T & other) {
-		get_unique_ptr() = unique_ptr_type(clone(other));
-		get_cloner() = cloner_type{};
-		return *this;
-	}
-	value_ptr & operator=(T && other) {
-		get_unique_ptr() = unique_ptr_type(clone(std::move(other)));
-		get_cloner() = cloner_type{};
-		return *this;
-	}
 
 	value_ptr & operator=(value_ptr const & other) {
 		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
