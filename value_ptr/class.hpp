@@ -110,14 +110,12 @@ public:
 
 
 	value_ptr & operator=(value_ptr const & other) {
-		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
-		get_cloner() = other.get_cloner();
+		assign(other);
 		return *this;
 	}
 	template<typename U, typename C, typename D>
 	value_ptr & operator=(value_ptr<U, C, D> const & other) {
-		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
-		get_cloner() = other.get_cloner();
+		assign(other);
 		return *this;
 	}
 	template<typename U, typename C, typename D>
@@ -127,7 +125,7 @@ public:
 	}
 	template<typename U, typename D>
 	value_ptr & operator=(std::unique_ptr<U, D> && other) noexcept {
-		get_unique_ptr() = (std::move(other));
+		get_unique_ptr() = std::move(other);
 		get_cloner() = cloner_type{};
 		return *this;
 	}
@@ -178,6 +176,12 @@ public:
 	}
 
 private:
+	template<typename U, typename C, typename D>
+	void assign(value_ptr<U, C, D> const & other) {
+		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
+		get_cloner() = other.get_cloner();
+	}
+
 	unique_ptr_type const & get_unique_ptr() const noexcept {
 		return std::get<0>(base);
 	}
