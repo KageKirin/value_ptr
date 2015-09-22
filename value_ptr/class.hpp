@@ -45,10 +45,10 @@ public:
 	using cloner_type = Cloner;
 	using deleter_type = typename unique_ptr_type::deleter_type;
 private:
-	using cloner_lvalue_reference = typename std::conditional<std::is_reference<cloner_type>::value, cloner_type, cloner_type const &>::type;
-	using deleter_lvalue_reference = typename std::conditional<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>::type;
-	using cloner_rvalue_reference = typename std::remove_reference<cloner_type>::type &&;
-	using deleter_rvalue_reference = typename std::remove_reference<deleter_type>::type &&;
+	using cloner_lvalue_reference = std::conditional_t<std::is_reference<cloner_type>::value, cloner_type, cloner_type const &>;
+	using deleter_lvalue_reference = std::conditional_t<std::is_reference<deleter_type>::value, deleter_type, deleter_type const &>;
+	using cloner_rvalue_reference = std::remove_reference_t<cloner_type> &&;
+	using deleter_rvalue_reference = std::remove_reference_t<deleter_type> &&;
 public:
 	using pointer = typename unique_ptr_type::pointer;
 	using element_type = typename unique_ptr_type::element_type;

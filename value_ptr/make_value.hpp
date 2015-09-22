@@ -61,7 +61,7 @@ typename detail::value_if<T>::object make_value(Args && ... args) {
 
 template<typename T>
 typename detail::value_if<T>::array make_value(std::size_t const n) {
-	using U = typename std::remove_extent<T>::type;
+	using U = std::remove_extent_t<T>;
 	return value_ptr<T>(new U[n]());
 }
 
@@ -82,7 +82,7 @@ typename detail::value_if_general<T, Cloner, Deleter>::array
 make_value_general(std::size_t const n, Cloner && cloner, Deleter && deleter) {
 	static_assert(std::is_nothrow_move_constructible<Cloner>::value, "The specified cloner's move constructor can throw.");
 	static_assert(std::is_nothrow_move_constructible<Deleter>::value, "The specified deleter's move constructor can throw.");
-	using U = typename std::remove_extent<T>::type;
+	using U = std::remove_extent_t<T>;
 	return value_ptr<T, Cloner, Deleter>(new U[n](), std::forward<Cloner>(cloner), std::forward<Deleter>(deleter));
 }
 

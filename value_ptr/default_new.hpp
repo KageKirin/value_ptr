@@ -41,7 +41,7 @@ public:
 	template<
 		typename U,
 		enable_if_t<
-			std::is_same<typename std::decay<T>::type, typename std::decay<U>::type>::value and
+			std::is_same<std::decay_t<T>, std::decay_t<U>>::value and
 			!std::is_array<U>::value
 		> = enabler_dummy
 	>
