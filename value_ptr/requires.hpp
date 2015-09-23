@@ -1,6 +1,5 @@
-// A slight simplification of std::enable_if, modified from
-// http://flamingdangerzone.com/cxx11/2012/06/01/almost-static-if.html
-// Copyright (C) 2014 David Stone
+// Improved version of enable_if
+// Copyright (C) 2015 David Stone
 //
 // This program is free software: you can redistribute it and / or modify
 // it under the terms of the GNU Affero General Public License as
@@ -15,33 +14,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef VALUE_PTR_ENABLE_IF_HPP_
-#define VALUE_PTR_ENABLE_IF_HPP_
+#pragma once
+
+// http://flamingdangerzone.com/cxx11/2012/06/01/almost-static-if.html
+// gave an outline of most of the tricks in here. This uses a macro to simplify
+// usage and give better error messages.
 
 #include <type_traits>
-
-namespace smart_pointer {
 
 #if 0
 
 // Usage:
-template<typename Blah, enable_if_t<1 + 1 == 2>...>
+template<typename Blah, SMART_POINTER_REQUIRES(condition<Blah>)>
 void f() {
 }
 
 #endif
 
+namespace smart_pointer {
 namespace detail {
-
 enum class enabler {};
-
 }	// namespace detail
-
-// This is used a workaround for clang.
-constexpr detail::enabler enabler_dummy{};
-
-template<bool condition>
-using enable_if_t = typename std::enable_if<condition, detail::enabler>::type;
-
 }	// namespace smart_pointer
-#endif	// VALUE_PTR_FLAT_MAP_HPP_
+
+// This must use a variadic macro in case the argument has a comma
+#define SMART_POINTER_REQUIRES(...) \
+	typename std::enable_if<__VA_ARGS__, smart_pointer::detail::enabler>::type = smart_pointer::detail::enabler{}
+

@@ -1,5 +1,5 @@
 // A smart pointer with value semantics
-// Copyright (C) 2014 David Stone
+// Copyright (C) 2015 David Stone
 //
 // This program is free software: you can redistribute it and / or modify
 // it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,7 @@
 #include <tuple>
 #include <type_traits>
 #include "default_new.hpp"
-#include "enable_if.hpp"
+#include "requires.hpp"
 
 namespace smart_pointer {
 namespace detail {
@@ -54,17 +54,17 @@ public:
 	using pointer = typename unique_ptr_type::pointer;
 	using element_type = typename unique_ptr_type::element_type;
 	
-	template<typename C, typename D, enable_if_t<std::is_convertible<C, cloner_type>::value and std::is_convertible<D, deleter_type>::value> = enabler_dummy>
+	template<typename C, typename D, SMART_POINTER_REQUIRES(std::is_convertible<C, cloner_type>::value and std::is_convertible<D, deleter_type>::value)>
 	value_ptr(pointer p, C && cloner, D && deleter) noexcept:
 		base(unique_ptr_type(p, std::forward<D>(deleter)), std::forward<C>(cloner), detail::empty_class()) {
 	}
 
-	template<typename C, enable_if_t<std::is_convertible<C, cloner_type>::value> = enabler_dummy>
+	template<typename C, SMART_POINTER_REQUIRES(std::is_convertible<C, cloner_type>::value)>
 	value_ptr(pointer p, C && cloner) noexcept:
 		base(unique_ptr_type(p), std::forward<Cloner>(cloner), detail::empty_class()) {
 	}
 
-	template<typename D, enable_if_t<std::is_convertible<D, deleter_type>::value> = enabler_dummy>
+	template<typename D, SMART_POINTER_REQUIRES(std::is_convertible<D, deleter_type>::value)>
 	value_ptr(pointer p, D && deleter) noexcept:
 		value_ptr(p, cloner_type{}, std::forward<D>(deleter)) {
 	}

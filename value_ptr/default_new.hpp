@@ -21,7 +21,8 @@
 #ifndef DEFAULT_NEW_HPP_
 #define DEFAULT_NEW_HPP_
 
-#include "enable_if.hpp"
+#include "requires.hpp"
+
 #include <algorithm>
 #include <memory>
 #include <type_traits>
@@ -40,10 +41,10 @@ public:
 	// when you instantiate the value_ptr. This also allows perfect forwarding.
 	template<
 		typename U,
-		enable_if_t<
+		SMART_POINTER_REQUIRES(
 			std::is_same<std::decay_t<T>, std::decay_t<U>>::value and
 			!std::is_array<U>::value
-		> = enabler_dummy
+		)
 	>
 	T * operator()(U && other) const {
 		static_assert(
