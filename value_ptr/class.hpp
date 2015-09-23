@@ -24,6 +24,7 @@
 #include <tuple>
 #include <type_traits>
 #include "default_new.hpp"
+#include "enable_if.hpp"
 
 namespace smart_pointer {
 namespace detail {
@@ -53,47 +54,38 @@ public:
 	using pointer = typename unique_ptr_type::pointer;
 	using element_type = typename unique_ptr_type::element_type;
 	
-	constexpr value_ptr() noexcept {}
+	template<typename C, typename D, enable_if_t<std::is_convertible<C, cloner_type>::value and std::is_convertible<D, deleter_type>::value> = enabler_dummy>
+	value_ptr(pointer p, C && cloner, D && deleter) noexcept:
+		base(unique_ptr_type(p, std::forward<D>(deleter)), std::forward<C>(cloner), detail::empty_class()) {
+	}
+
+	template<typename C, enable_if_t<std::is_convertible<C, cloner_type>::value> = enabler_dummy>
+	value_ptr(pointer p, C && cloner) noexcept:
+		base(unique_ptr_type(p), std::forward<Cloner>(cloner), detail::empty_class()) {
+	}
+
+	template<typename D, enable_if_t<std::is_convertible<D, deleter_type>::value> = enabler_dummy>
+	value_ptr(pointer p, D && deleter) noexcept:
+		value_ptr(p, cloner_type{}, std::forward<D>(deleter)) {
+	}
+
+
 	constexpr value_ptr(std::nullptr_t) noexcept:
-		base(nullptr, cloner_type{}, detail::empty_class()) {
+		value_ptr(nullptr, cloner_type{}) {
+	}
+	constexpr value_ptr() noexcept:
+		value_ptr(nullptr) {
 	}
 	explicit value_ptr(pointer p) noexcept:
-		base(unique_ptr_type(p), cloner_type{}, detail::empty_class()) {
-	}
-
-	value_ptr(pointer p, cloner_lvalue_reference cloner) noexcept:
-		base(unique_ptr_type(p), cloner, detail::empty_class()) {
-	}
-	value_ptr(pointer p, cloner_rvalue_reference cloner) noexcept:
-		base(unique_ptr_type(p), std::move(cloner), detail::empty_class()) {
-	}
-
-	value_ptr(pointer p, deleter_lvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, deleter), cloner_type{}, detail::empty_class()) {
-	}
-	value_ptr(pointer p, deleter_rvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, std::move(deleter)), cloner_type{}, detail::empty_class()) {
-	}
-
-	value_ptr(pointer p, cloner_lvalue_reference cloner, deleter_lvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, deleter), cloner, detail::empty_class()) {
-	}
-	value_ptr(pointer p, cloner_lvalue_reference cloner, deleter_rvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, std::move(deleter)), cloner, detail::empty_class()) {
-	}
-	value_ptr(pointer p, cloner_rvalue_reference cloner, deleter_lvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, deleter), std::move(cloner), detail::empty_class()) {
-	}
-	value_ptr(pointer p, cloner_rvalue_reference cloner, deleter_rvalue_reference deleter) noexcept:
-		base(unique_ptr_type(p, std::move(deleter)), std::move(cloner), detail::empty_class()) {
+		value_ptr(p, cloner_type{}) {
 	}
 
 	value_ptr(value_ptr const & other):
-		base(other != nullptr ? clone(*other) : nullptr, other.get_cloner(), detail::empty_class()) {
+		value_ptr(copy_construct{}, other) {
 	}
 	template<typename U, typename C, typename D>
 	value_ptr(value_ptr<U, C, D> const & other):
-		base(other != nullptr ? clone(*other) : nullptr, other.get_cloner(), detail::empty_class()) {
+		value_ptr(copy_construct{}, other) {
 	}
 
 	value_ptr(value_ptr && other) noexcept:
@@ -176,6 +168,13 @@ public:
 	}
 
 private:
+	enum class copy_construct {};
+	template<typename U, typename C, typename D>
+	value_ptr(copy_construct, value_ptr<U, C, D> const & other):
+		value_ptr(other != nullptr ? clone(*other) : nullptr, other.get_cloner(), other.get_deleter()) {
+		static_assert(noexcept(other.get_cloner()) and noexcept(other.get_deleter()), "Must be noexcept.");
+	}
+	
 	template<typename U, typename C, typename D>
 	void assign(value_ptr<U, C, D> const & other) {
 		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
@@ -189,8 +188,8 @@ private:
 		return std::get<0>(base);
 	}
 	template<typename U>
-	unique_ptr_type clone(U && other) const {
-		return unique_ptr_type(get_cloner()(std::forward<U>(other)));
+	auto clone(U && other) const {
+		return get_cloner()(std::forward<U>(other));
 	}
 	base_type base;
 
