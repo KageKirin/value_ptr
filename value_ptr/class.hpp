@@ -70,11 +70,8 @@ public:
 	}
 
 
-	constexpr value_ptr(std::nullptr_t) noexcept:
+	constexpr value_ptr(std::nullptr_t = nullptr) noexcept:
 		value_ptr(nullptr, cloner_type{}) {
-	}
-	constexpr value_ptr() noexcept:
-		value_ptr(nullptr) {
 	}
 	explicit value_ptr(pointer p) noexcept:
 		value_ptr(p, cloner_type{}) {
