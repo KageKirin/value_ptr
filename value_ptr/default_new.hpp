@@ -39,16 +39,10 @@ public:
 	// point of use. The static_assert is only triggered if you actually try the
 	// operation that causes an error (cloning a polymorphic class), rather than
 	// when you instantiate the value_ptr. This also allows perfect forwarding.
-	template<
-		typename U,
-		SMART_POINTER_REQUIRES(
-			std::is_same<std::decay_t<T>, std::decay_t<U>>::value and
-			!std::is_array<U>::value
-		)
-	>
+	template<typename U>
 	T * operator()(U && other) const {
 		static_assert(
-			!std::is_polymorphic<T>::value,
+			!std::is_polymorphic<T>::value and !std::is_polymorphic<U>::value,
 			"You must either specialize default_new to properly clone your polymorphic type or provide a custom cloner."
 		);
 		return new T(std::forward<U>(other));
