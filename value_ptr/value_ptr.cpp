@@ -117,7 +117,7 @@ void test_constructors(Verify<Tester> & verify) {
 	verify();
 	Tester t;
 	verify.default_construct();
-	auto p = make_value<Tester>(t);
+	auto p = value_ptr<Tester>(t);
 	verify.copy_construct();
 	verify();
 	std::vector<value_ptr<Tester>> v;
@@ -140,7 +140,7 @@ void test_constructors(Verify<Tester> & verify) {
 		verify.default_construct();
 	}
 	verify();
-	auto moved_to = make_value<Tester>(std::move(t));
+	auto moved_to = value_ptr<Tester>(std::move(t));
 	verify.move_construct();
 	verify();
 	
@@ -163,6 +163,12 @@ void test_assignment(Verify<Tester> & verify) {
 	value_ptr<Tester> p;
 	p = make_value<Tester>();
 	verify.default_construct();
+	verify();
+	p = Tester{};
+	verify.default_construct();
+	verify.destruct();
+	verify.move_construct();
+	verify.destruct();
 	verify();
 }
 

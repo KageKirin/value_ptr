@@ -96,6 +96,12 @@ public:
 	value_ptr(std::unique_ptr<U, D> && other) noexcept:
 		base(std::move(other), cloner_type{}, detail::empty_class()) {
 	}
+	
+	template<typename U, SMART_POINTER_REQUIRES(std::is_convertible<U, element_type>::value)>
+	value_ptr(U && other):
+		value_ptr(nullptr) {
+		get_unique_ptr().reset(clone(std::forward<U>(other)));
+	}
 
 
 	value_ptr & operator=(value_ptr const & other) {
@@ -123,6 +129,16 @@ public:
 		return *this;
 	}
 	
+	// I am not sure if I should keep this around. It has the surprising effect
+	// of constructing the new value and destructing the old value, rather than
+	// assigning.
+	template<typename U, SMART_POINTER_REQUIRES(std::is_convertible<U, element_type>::value)>
+	value_ptr & operator=(U && other) {
+		get_unique_ptr() = unique_ptr_type(clone(std::forward<U>(other)));
+		get_cloner() = cloner_type{};
+		return *this;
+	}
+
 	pointer release() noexcept {
 		return get_unique_ptr().release();
 	}
