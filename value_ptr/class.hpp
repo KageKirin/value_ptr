@@ -190,7 +190,9 @@ private:
 	
 	template<typename U, typename C, typename D>
 	void assign(value_ptr<U, C, D> const & other) {
-		get_unique_ptr() = unique_ptr_type(clone(other), other.get_deleter());
+		if (other) {
+			get_unique_ptr() = unique_ptr_type(clone(*other), other.get_deleter());
+		}
 		get_cloner() = other.get_cloner();
 	}
 
