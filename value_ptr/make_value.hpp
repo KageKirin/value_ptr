@@ -3,8 +3,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef VALUE_PTR_MAKE_VALUE_HPP_
-#define VALUE_PTR_MAKE_VALUE_HPP_
+#pragma once
 
 #include "class.hpp"
 
@@ -76,4 +75,3 @@ template<typename T, typename ... Args>
 typename detail::value_if<T>::known_bound make_value_general(Args && ...) = delete;
 
 }	// namespace smart_pointer
-#endif	// VALUE_PTR_MAKE_VALUE_HPP_

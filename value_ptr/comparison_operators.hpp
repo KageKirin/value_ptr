@@ -3,8 +3,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef VALUE_PTR_COMPARISON_OPERATORS_HPP_
-#define VALUE_PTR_COMPARISON_OPERATORS_HPP_
+#pragma once
 
 #include "class.hpp"
 
@@ -99,4 +98,3 @@ bool operator>=(std::nullptr_t, value_ptr<T, C, D> const & ptr) {
 }
 
 }	// namespace smart_pointer
-#endif	// VALUE_PTR_COMPARISON_OPERATORS_HPP_

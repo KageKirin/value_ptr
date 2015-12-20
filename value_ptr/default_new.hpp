@@ -7,8 +7,7 @@
 // possible. It is used for the copy constructor and copy assignment operator of
 // value_ptr.
 
-#ifndef DEFAULT_NEW_HPP_
-#define DEFAULT_NEW_HPP_
+#pragma once
 
 #include "requires.hpp"
 
@@ -51,4 +50,3 @@ public:
 };
 
 }	// namespace smart_pointer
-#endif	// DEFAULT_NEW_HPP_

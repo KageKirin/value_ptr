@@ -3,8 +3,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef VALUE_PTR_CLASS_HPP_
-#define VALUE_PTR_CLASS_HPP_
+#pragma once
 
 #include <memory>
 #include <tuple>
@@ -200,4 +199,3 @@ private:
 
 
 }	// namespace smart_pointer
-#endif	// VALUE_PTR_CLASS_HPP_
